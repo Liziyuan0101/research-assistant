@@ -8,6 +8,7 @@ Research Assistant - Main Application
 3. Qwen2.5-7B LoRA微调：学术写作优化 (ROUGE-L: 0.47, 术语准确率: 89%)
 """
 
+import logging
 import yaml
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -18,6 +19,7 @@ load_dotenv()
 
 from .retrieval import PaperRetriever, PaperInterpreter
 from .retrieval import HybridRetriever, RetrievalEvaluator
+from .retrieval.memory import MemoryStore
 from .experiment import ExperimentPlanner
 from .writing import AcademicWriter, CitationManager
 from .tools import CodeGenerator, DataAnalyzer, Visualizer
@@ -40,22 +42,23 @@ except ImportError:
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _CONFIG_DIR = Path(__file__).resolve().parent / 'config'
 
-
-import logging
 logger = logging.getLogger(__name__)
+
 
 class ResearchAssistant:
     """科研论文智能助手主类"""
     
-    def __init__(self, config_path: Optional[str] = None, verbose: bool = True):
+    def __init__(self, config_path: Optional[str] = None, verbose: bool = True, user_id: str = "default"):
         """
         初始化研究助手
-        
+
         Args:
             config_path: 配置文件路径
             verbose: 是否输出初始化信息
+            user_id: 用户标识,用于个性化记忆
         """
         self._verbose = verbose
+        self.user_id = user_id
         
         # 加载配置
         if config_path is None:
@@ -66,15 +69,19 @@ class ResearchAssistant:
         # 加载prompts
         prompts_path = _CONFIG_DIR / 'prompts.yaml'
         self.prompts = self._load_config(prompts_path)
-        
+
+        # 用户记忆(个性化:偏好 + 历史问答)
+        self.memory = MemoryStore(str(_PROJECT_ROOT / 'data' / 'memory.db'))
+
         # 论文检索模块（API搜索）
         self.paper_retriever = PaperRetriever(
             self.config.get('paper_retrieval', {})
         )
         self.paper_interpreter = PaperInterpreter(
-            self.config, 
+            self.config,
             self.prompts
         )
+        self.paper_interpreter.preferences = self.memory.get_preferences(self.user_id)
         
         # 混合检索模块 - BM25 + BGE-M3 + BGE-Reranker
         hybrid_config = self.config.get('hybrid_retrieval', {})
@@ -174,7 +181,14 @@ class ResearchAssistant:
                 logger.info(f"增强查询: {search_query}")
         else:
             search_query = query
-        
+
+        # 个性化:合并用户关键词偏好到查询
+        keyword_prefs = self.memory.get_preferences(self.user_id).get('keyword', [])
+        if keyword_prefs:
+            search_query = f"{search_query} {' '.join(keyword_prefs)}"
+            if verbose:
+                logger.info(f"个性化查询(含关键词偏好): {search_query}")
+
         # 尝试从缓存加载
         if use_cache:
             cached_papers = self.paper_retriever.load_from_cache(search_query)

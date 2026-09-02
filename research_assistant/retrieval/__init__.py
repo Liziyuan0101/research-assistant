@@ -8,15 +8,18 @@ from .evaluation import (
     RAGEvaluator,
     EvalSample
 )
+from .memory import MemoryStore, format_preferences
 
 __all__ = [
     'PaperRetriever',
-    'PaperInterpreter', 
+    'PaperInterpreter',
     'HybridRetriever',
     'MetadataStore',
     'PDFMarkdownProcessor',
     'RetrievalEvaluator',
     'RAGASTestsetGenerator',
     'RAGEvaluator',
-    'EvalSample'
+    'EvalSample',
+    'MemoryStore',
+    'format_preferences'
 ]

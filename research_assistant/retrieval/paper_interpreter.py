@@ -5,14 +5,14 @@ Paper Interpreter Module
 
 import os
 import yaml
+import logging
 from typing import Dict, List, Optional
 from pathlib import Path
 import json
 
 from ..utils.llm import create_openai_client
+from .memory import format_preferences
 
-
-import logging
 logger = logging.getLogger(__name__)
 
 class PaperInterpreter:
@@ -30,7 +30,16 @@ class PaperInterpreter:
         self.model = llm_config.get('model', 'deepseek-chat')
         self.temperature = llm_config.get('temperature', 0.7)
         self.max_tokens = llm_config.get('max_tokens', 4096)
-    
+        self.preferences = {}  # 用户科研偏好,由门面注入,用于个性化解读
+
+    def _system_prompt(self) -> str:
+        """构建系统提示,附加用户偏好(软个性化)。"""
+        base = "你是一位专业的学术论文分析专家。"
+        pref_text = format_preferences(self.preferences)
+        if pref_text:
+            return f"{base}\n{pref_text}"
+        return base
+
     def interpret_paper(self, paper: Dict) -> Dict:
         """
         全面解读论文
@@ -72,7 +81,7 @@ class PaperInterpreter:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "你是一位专业的学术论文分析专家。"},
+                    {"role": "system", "content": self._system_prompt()},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=self.temperature,
@@ -99,7 +108,7 @@ class PaperInterpreter:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "你是一位专业的学术论文分析专家。"},
+                    {"role": "system", "content": self._system_prompt()},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=self.temperature,
@@ -130,7 +139,7 @@ class PaperInterpreter:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "你是一位专业的学术论文分析专家。"},
+                    {"role": "system", "content": self._system_prompt()},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=self.temperature,
@@ -206,7 +215,7 @@ class PaperInterpreter:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "你是一位专业的学术论文分析专家。"},
+                    {"role": "system", "content": self._system_prompt()},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=self.temperature,
