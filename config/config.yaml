@@ -1,0 +1,245 @@
+# Research Assistant Configuration
+
+# API Keys (set in environment variables or .env file)
+api_keys:
+  openai_api_key: ${DEEPSEEK_API_KEY}
+  openai_base_url: "https://api.deepseek.com"  # DeepSeek API endpoint
+  
+# LLM Configuration
+llm:
+  provider: "openai"  # openai compatible (DeepSeek uses OpenAI format)
+  model: "deepseek-chat"
+  temperature: 0.7
+  max_tokens: 4096
+  base_url: "https://api.deepseek.com"
+  
+  # Local model settings (if using local models)
+  local:
+    model_path: null
+    model_name: "Qwen/Qwen2.5-7B-Instruct"
+    device: "cuda"
+    load_in_8bit: false
+
+# Embedding Configuration
+embedding:
+  model: "sentence-transformers/all-MiniLM-L6-v2"
+  # Alternative: "BAAI/bge-large-zh-v1.5" for Chinese
+  device: "cpu"
+  batch_size: 32
+
+# Vector Database
+vector_db:
+  type: "faiss"  # faiss, chromadb
+  persist_directory: "data/embeddings"
+  collection_name: "research_papers"
+
+# =============================================================================
+# Hybrid Retrieval Configuration (NEW)
+# 混合检索配置：BM25 + BGE-M3 + BGE-Reranker
+# =============================================================================
+hybrid_retrieval:
+  # BGE-M3 稠密检索模型
+  bge_model: "BAAI/bge-m3"
+  # BGE-Reranker 精排模型
+  reranker_model: "BAAI/bge-reranker-v2-m3"
+  # 设备配置
+  device: "cuda"
+  
+  # 检索参数
+  bm25_weight: 0.3  # BM25 权重
+  dense_weight: 0.7  # 稠密检索权重
+  top_k: 5
+  rerank_top_k: 20  # 精排前的候选数量
+  
+  # 文本分块
+  chunk_size: 512
+  chunk_overlap: 50
+  
+  # 三层存储路径
+  storage:
+    index_dir: "data/index"  # FAISS HNSW 索引 (~5-10GB for 100k papers)
+    metadata_db: "data/metadata/papers.db"  # SQLite 元数据 (~1GB)
+    cache_dir: "data/cache"  # PDF 缓存 (动态)
+  
+# Paper Retrieval
+paper_retrieval:
+  sources:
+    - arxiv
+    - semantic_scholar  # 官方API，免费且稳定
+    - openalex          # 免费，无需API Key，推荐
+    # - core            # 需要API Key，注册: https://core.ac.uk/services/api
+    # - dimensions      # 需要API Key，注册: https://app.dimensions.ai/
+    # - google_scholar  # 已禁用：无官方API，容易被封禁
+  max_results: 10
+  cache_directory: "data/papers"
+  download_pdf: true
+  
+  arxiv:
+    max_results: 20
+    sort_by: "relevance"  # relevance, lastUpdatedDate, submittedDate
+  
+  semantic_scholar:
+    max_results: 20
+    fields: ["title", "abstract", "authors", "year", "venue", "citationCount", "isOpenAccess"]
+  
+  # OpenAlex - 免费开放学术数据库 (推荐)
+  # 文档: https://docs.openalex.org/
+  openalex:
+    max_results: 20
+    email: "your-email@example.com"  # 可选，用于礼貌池
+  
+  # CORE - 开放获取论文聚合 (需要API Key)
+  # 注册: https://core.ac.uk/services/api
+  core:
+    max_results: 20
+    api_key: ${CORE_API_KEY}  # 或设置环境变量
+  
+  # Dimensions - 综合学术数据库 (需要API Key)
+  # 注册: https://app.dimensions.ai/
+  dimensions:
+    max_results: 20
+    api_key: ${DIMENSIONS_API_KEY}  # 或设置环境变量
+    
+  google_scholar:
+    max_results: 20
+    language: "en"
+
+# =============================================================================
+# Multi-Agent Configuration (NEW)
+# LangGraph 多智能体配置
+# =============================================================================
+multi_agent:
+  # Agent 最大迭代次数
+  max_iterations: 10
+  
+  # 输出目录
+  output_dir: "output/agent_outputs"
+  
+  # 各 Agent 配置
+  agents:
+    retrieval:
+      enabled: true
+      tools: ["paper_retrieval"]
+    experiment:
+      enabled: true
+      tools: ["python_executor", "statistical_analysis", "data_visualization", "paper_retrieval"]
+    writing:
+      enabled: true
+      tools: ["citation_manager", "paper_retrieval"]
+  
+  # 引用格式
+  citation_style: "ieee"
+
+# Experiment Agent
+experiment_agent:
+  max_iterations: 10
+  tools:
+    - code_generator
+    - data_analyzer
+    - visualizer
+    - literature_search
+  planning_model: "deepseek-chat"
+  execution_model: "deepseek-chat"
+  
+# Writing Assistant
+writing_assistant:
+  model: "deepseek-chat"
+  temperature: 0.8
+  max_length: 2048
+  
+  # Fine-tuned model (optional)
+  fine_tuned:
+    enabled: false
+    model_path: "output/lora_model"
+    base_model: "Qwen/Qwen2.5-7B-Instruct"
+    
+  templates:
+    - abstract
+    - introduction
+    - methodology
+    - results
+    - discussion
+    - conclusion
+    
+  citation_style: "ieee"  # ieee, apa, mla, chicago
+  
+  languages:
+    - zh  # Chinese
+    - en  # English
+
+# =============================================================================
+# LoRA Fine-tuning Configuration (NEW)
+# Qwen2.5-7B LoRA 微调配置
+# =============================================================================
+lora_training:
+  # 基础模型
+  model_name: "Qwen/Qwen2.5-7B-Instruct"
+  
+  # LoRA 参数
+  lora_r: 64
+  lora_alpha: 128
+  lora_dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  
+  # 量化配置
+  use_4bit: true
+  bnb_4bit_compute_dtype: "float16"
+  bnb_4bit_quant_type: "nf4"
+  
+  # 训练参数
+  output_dir: "output/lora_model"
+  num_train_epochs: 3
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 0.0002
+  warmup_ratio: 0.03
+  max_seq_length: 2048
+  
+  # 数据路径
+  train_data: "data/training/train_chat.json"
+  eval_data: "data/training/val_chat.json"
+
+# =============================================================================
+# Evaluation Configuration (NEW)
+# 评测配置
+# =============================================================================
+evaluation:
+  # 检索评测
+  retrieval:
+    eval_data_path: "data/eval/retrieval_eval.json"
+    k_values: [1, 3, 5, 10]
+    
+  # 写作评测
+  writing:
+    # ROUGE 评测
+    rouge_types: ["rouge1", "rouge2", "rougeL"]
+    # 术语数据库
+    terminology_db: "data/eval/terminology.json"
+    
+  # RAGAS 评测
+  ragas:
+    # 自动生成评测集
+    auto_generate: true
+    num_samples: 50
+    # 难度分布
+    distribution:
+      simple: 0.5
+      reasoning: 0.3
+      multi_context: 0.2
+
+# Logging
+logging:
+  level: "INFO"
+  file: "logs/research_assistant.log"
+  
+# Cache
+cache:
+  enabled: true
+  ttl: 86400  # 24 hours in seconds

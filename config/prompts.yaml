@@ -1,0 +1,253 @@
+# Prompt Templates for Research Assistant
+
+# Paper Interpretation Prompts
+paper_interpretation:
+  summary: |
+    请分析以下学术论文并提供详细总结：
+    
+    标题: {title}
+    作者: {authors}
+    摘要: {abstract}
+    
+    请提供以下内容：
+    1. 研究背景和动机
+    2. 主要方法和创新点
+    3. 关键实验结果
+    4. 主要结论和贡献
+    5. 潜在的局限性
+    
+    请用中文回答，保持学术性和准确性。
+    
+  key_findings: |
+    从以下论文内容中提取关键发现：
+    
+    {content}
+    
+    请列出：
+    - 主要发现（3-5条）
+    - 支持证据
+    - 统计显著性
+    
+  methodology_extract: |
+    提取论文的方法论部分：
+    
+    {content}
+    
+    请详细说明：
+    1. 数据集和数据来源
+    2. 模型架构或算法
+    3. 实验设置和参数
+    4. 评估指标
+    5. 基线方法
+
+# Experiment Design Prompts
+experiment_design:
+  planning: |
+    作为实验设计专家，请为以下研究问题设计完整的实验方案：
+    
+    研究问题: {research_question}
+    
+    相关论文参考:
+    {papers_context}
+    
+    请提供：
+    1. 实验目标和假设
+    2. 数据需求和预处理步骤
+    3. 模型/方法选择及理由
+    4. 实验设置（参数、超参数）
+    5. 评估指标和基线
+    6. 预期结果和验证方法
+    7. 潜在挑战和解决方案
+    
+    请以结构化方式输出，便于后续实现。
+    
+  code_generation: |
+    基于以下实验方案，生成完整的Python实现代码：
+    
+    实验方案:
+    {experiment_plan}
+    
+    要求：
+    1. 代码结构清晰，包含必要的注释
+    2. 包含数据加载、预处理、模型定义、训练、评估
+    3. 使用最佳实践（如早停、学习率调度等）
+    4. 添加日志记录和结果保存
+    5. 代码可直接运行
+    
+    请生成完整代码。
+    
+  parameter_suggestion: |
+    为以下实验推荐合适的参数配置：
+    
+    模型类型: {model_type}
+    数据集规模: {dataset_size}
+    任务类型: {task_type}
+    
+    参考论文中的设置:
+    {paper_parameters}
+    
+    请推荐：
+    1. 学习率和优化器
+    2. 批次大小
+    3. 训练轮数
+    4. 正则化参数
+    5. 模型特定参数
+    
+    并说明推荐理由。
+
+# Academic Writing Prompts
+academic_writing:
+  abstract: |
+    请为以下研究生成学术论文摘要（中文）：
+    
+    标题: {title}
+    关键词: {keywords}
+    研究背景: {background}
+    方法: {methods}
+    结果: {results}
+    结论: {conclusion}
+    
+    要求：
+    1. 200-300字
+    2. 包含背景、方法、结果、结论四要素
+    3. 语言简洁、学术规范
+    4. 突出创新点和主要贡献
+    
+  abstract_en: |
+    Generate an academic abstract in English for the following research:
+    
+    Title: {title}
+    Keywords: {keywords}
+    Background: {background}
+    Methods: {methods}
+    Results: {results}
+    Conclusion: {conclusion}
+    
+    Requirements:
+    1. 200-300 words
+    2. Include background, methods, results, and conclusion
+    3. Clear, concise, and academic tone
+    4. Highlight novelty and main contributions
+    
+  introduction: |
+    请撰写论文引言部分：
+    
+    研究主题: {topic}
+    研究问题: {research_question}
+    相关工作: {related_work}
+    本文贡献: {contributions}
+    
+    要求：
+    1. 从宏观背景引入，逐步聚焦到具体问题
+    2. 综述相关研究，指出现有方法的不足
+    3. 明确本文的创新点和贡献
+    4. 说明论文组织结构
+    5. 1000-1500字
+    
+  methodology: |
+    请撰写方法论章节：
+    
+    方法名称: {method_name}
+    技术细节: {technical_details}
+    算法流程: {algorithm}
+    
+    要求：
+    1. 清晰描述方法的原理和步骤
+    2. 包含必要的数学公式
+    3. 使用图表辅助说明（描述图表内容）
+    4. 说明方法的优势和创新之处
+    5. 保持逻辑连贯
+    
+  results: |
+    请撰写实验结果章节：
+    
+    实验设置: {experimental_setup}
+    数据集: {datasets}
+    评估指标: {metrics}
+    结果数据: {results_data}
+    
+    要求：
+    1. 客观呈现实验结果
+    2. 使用表格和图表展示关键数据
+    3. 与基线方法进行对比分析
+    4. 进行消融实验分析
+    5. 讨论结果的意义
+    
+  discussion: |
+    请撰写讨论章节：
+    
+    主要发现: {findings}
+    结果解释: {interpretation}
+    局限性: {limitations}
+    未来工作: {future_work}
+    
+    要求：
+    1. 深入解释实验结果
+    2. 讨论方法的适用性和局限性
+    3. 与相关研究进行比较
+    4. 提出未来研究方向
+    5. 保持客观和批判性思维
+    
+  polish: |
+    请润色以下学术文本，提升其专业性和流畅性：
+    
+    原文:
+    {original_text}
+    
+    要求：
+    1. 保持原意不变
+    2. 使用更学术化的表达
+    3. 改进句式结构
+    4. 确保逻辑连贯
+    5. 修正语法错误
+    
+    请提供润色后的文本。
+
+# Literature Review Prompts
+literature_review:
+  synthesis: |
+    基于以下论文，撰写文献综述：
+    
+    {papers_list}
+    
+    请按以下结构组织：
+    1. 研究领域概述
+    2. 主要研究方向和方法
+    3. 各方法的优缺点对比
+    4. 研究趋势和发展
+    5. 现有研究的不足
+    
+  comparison: |
+    比较以下几篇论文的方法和结果：
+    
+    {papers_to_compare}
+    
+    请从以下维度比较：
+    1. 方法原理
+    2. 数据集和实验设置
+    3. 性能指标
+    4. 优缺点
+    5. 适用场景
+
+# Query Enhancement
+query_enhancement:
+  expand: |
+    请扩展以下学术检索查询，使其更全面：
+    
+    原始查询: {original_query}
+    
+    请提供：
+    1. 同义词和相关术语
+    2. 更具体的子主题
+    3. 相关的研究方法
+    4. 建议的布尔运算符组合
+    
+  translate: |
+    请将以下中文学术查询翻译为英文，并优化为适合学术数据库检索的格式：
+    
+    中文查询: {chinese_query}
+    
+    要求：
+    1. 使用标准学术术语
+    2. 保持查询的准确性
+    3. 适合arXiv、Google Scholar等平台
