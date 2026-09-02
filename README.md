@@ -58,8 +58,12 @@ conda activate research_assistant
 ### 3. 安装依赖
 
 ```bash
-# 基础依赖
-pip install -r requirements.txt
+# 安装本包 (core 依赖,不含 GPU/torch)
+pip install -e ".[core]"
+
+# 需要 Multi-Agent / 微调时:
+#   pip install -e ".[agent]"      # LangGraph 多智能体
+#   pip install -e ".[finetune]"   # 混合检索(BGE/FAISS) + LoRA 微调
 
 # GPU版本 (推荐)
 pip install torch --index-url https://download.pytorch.org/whl/cu118
@@ -85,7 +89,7 @@ DIMENSIONS_API_KEY=your-dimensions-api-key
 ### 基础使用
 
 ```python
-from main import ResearchAssistant
+from research_assistant import ResearchAssistant
 
 # 初始化
 assistant = ResearchAssistant()
@@ -105,10 +109,10 @@ for r in results:
 
 ```bash
 # 搜索论文
-python main.py --query "battery prediction"
+research-assistant --query "battery prediction"
 
 # 完整工作流
-python main.py --query "battery prediction" --workflow
+research-assistant --query "battery prediction" --workflow
 ```
 
 ### 运行示例
@@ -285,34 +289,32 @@ hybrid_retrieval:
 ## 📁 项目结构
 
 ```
-research_assistant/
-├── main.py                      # 主入口
-├── config/
-│   ├── config.yaml              # 系统配置
-│   └── prompts.yaml             # Prompt模板
-├── modules/
-│   ├── paper_retrieval/             # 论文检索模块
-│   │   ├── paper_retriever.py       # API搜索
-│   │   ├── hybrid_retriever.py      # 混合检索
+research-assistant/
+├── pyproject.toml               # 打包配置 (core/agent/finetune extras)
+├── research_assistant/          # 可安装包
+│   ├── __init__.py              # 导出 ResearchAssistant
+│   ├── assistant.py             # ResearchAssistant 门面类
+│   ├── cli.py                   # 命令行入口
+│   ├── config/
+│   │   ├── config.yaml          # 系统配置
+│   │   └── prompts.yaml         # Prompt模板
+│   ├── retrieval/               # 论文检索模块
+│   │   ├── paper_retriever.py   # API搜索
+│   │   ├── hybrid_retriever.py  # 混合检索
 │   │   ├── pdf_markdown_processor.py # PDF解析/清洗/切分
-│   │   ├── paper_interpreter.py     # 论文解读
-│   │   └── evaluation.py            # 检索评测
+│   │   ├── paper_interpreter.py # 论文解读
+│   │   └── evaluation.py        # 检索评测
 │   ├── agents/                  # Multi-Agent
-│   │   ├── multi_agent.py       # LangGraph
-│   │   └── tools.py             # Agent工具
-│   ├── experiment_agent/        # 实验设计
-│   ├── writing_assistant/       # 学术写作
-│   └── training/                # LoRA微调
-├── tools/                       # 工具模块
-│   ├── code_generator.py        # 代码生成
-│   ├── data_analyzer.py         # 数据分析
-│   └── visualizer.py            # 可视化
-├── utils/                       # 工具函数
-│   └── query_enhancer.py        # 查询增强
+│   ├── experiment/              # 实验设计
+│   ├── writing/                 # 学术写作
+│   ├── tools/                   # 工具模块
+│   │   ├── code_generator.py    # 代码生成
+│   │   ├── data_analyzer.py     # 数据分析
+│   │   └── visualizer.py        # 可视化
+│   └── utils/                   # 工具函数
+├── optional/
+│   └── finetune/                # LoRA微调 (非核心)
 ├── examples/                    # 示例代码
-│   ├── 01_quick_start.py        # 快速入门
-│   ├── 02_advanced_retrieval.py # 高级检索
-│   └── 03_research_workflow.py  # 完整工作流
 ├── data/                        # 数据目录
 ├── output/                      # 输出目录
 ├── requirements.txt             # 依赖

@@ -25,6 +25,9 @@ warnings.filterwarnings("ignore", message=".*XLMRobertaTokenizerFast.*")
 warnings.filterwarnings("ignore", category=UserWarning)
 logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
 logging.getLogger("transformers").setLevel(logging.ERROR)
+
+logger = logging.getLogger(__name__)
+
 from typing import List, Dict, Optional, Tuple, Any
 from dataclasses import dataclass, asdict
 from datetime import datetime
@@ -946,7 +949,7 @@ Hypothetical Abstract:"""
                     if self._bm25_corpus:
                         self._bm25_index = BM25Okapi(self._bm25_corpus)
             except Exception as e:
-                pass
+                logger.warning("Index load failed: %s", e)
         
         # 加载FAISS索引
         faiss_path = self.index_dir / 'faiss_hnsw.index'
@@ -958,7 +961,7 @@ Hypothetical Abstract:"""
                 with open(faiss_ids_path, 'rb') as f:
                     self._faiss_chunk_ids = pickle.load(f)
             except Exception as e:
-                pass
+                logger.warning("Index load failed: %s", e)
     
     def get_stats(self) -> Dict:
         """获取统计信息"""

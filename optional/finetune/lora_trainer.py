@@ -452,7 +452,7 @@ LoRA Fine-tuning Script for Qwen2.5-7B
 import sys
 sys.path.insert(0, '{Path(__file__).parent.parent.parent}')
 
-from modules.training import LoRATrainer, TrainingConfig
+from optional.finetune import LoRATrainer, TrainingConfig
 
 def main():
     # 训练配置

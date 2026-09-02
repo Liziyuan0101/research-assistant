@@ -7,10 +7,7 @@ import os
 from typing import Dict, Optional, List
 from pathlib import Path
 
-try:
-    from openai import OpenAI
-except ImportError:
-    OpenAI = None
+from ..utils.llm import create_openai_client
 
 
 class CodeGenerator:
@@ -20,18 +17,8 @@ class CodeGenerator:
         self.config = config
         
         llm_config = config.get('llm', {})
-        api_keys_config = config.get('api_keys', {})
         
-        if OpenAI:
-            api_key = os.getenv('DEEPSEEK_API_KEY') or os.getenv('OPENAI_API_KEY') or api_keys_config.get('openai_api_key')
-            base_url = llm_config.get('base_url') or api_keys_config.get('openai_base_url')
-            
-            if api_key:
-                self.client = OpenAI(api_key=api_key, base_url=base_url)
-            else:
-                self.client = None
-        else:
-            self.client = None
+        self.client = create_openai_client(config)
         
         self.model = llm_config.get('model', 'deepseek-chat')
     

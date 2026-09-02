@@ -13,6 +13,7 @@ Paper Retrieval Module
 
 import os
 import json
+import logging
 import arxiv
 from typing import List, Dict, Optional
 from datetime import datetime
@@ -24,13 +25,13 @@ from tqdm import tqdm
 
 # 导入 QueryEnhancer 用于 KeyBERT 关键短语提取
 try:
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-    from utils.query_enhancer import QueryEnhancer
+    from ..utils.query_enhancer import QueryEnhancer
     HAS_QUERY_ENHANCER = True
 except ImportError:
     HAS_QUERY_ENHANCER = False
     QueryEnhancer = None
+
+logger = logging.getLogger(__name__)
 
 
 class PaperRetriever:
@@ -270,7 +271,7 @@ class PaperRetriever:
                 papers.append(paper)
                 
         except Exception as e:
-            pass
+            logger.warning("Retrieval error: %s", e)
             
         return papers
     
@@ -307,10 +308,10 @@ class PaperRetriever:
                 papers.append(paper)
                 time.sleep(1)  # 避免请求过快
                 
-        except ImportError:
-            pass
+        except ImportError as e:
+            logger.warning("Optional dependency missing: %s", e)
         except Exception as e:
-            pass
+            logger.warning("Retrieval error: %s", e)
             
         return papers
     
@@ -353,10 +354,10 @@ class PaperRetriever:
                 papers.append(paper)
                 time.sleep(0.1)  # 避免请求过快
                 
-        except ImportError:
-            pass
+        except ImportError as e:
+            logger.warning("Optional dependency missing: %s", e)
         except Exception as e:
-            pass
+            logger.warning("Retrieval error: %s", e)
             
         return papers
     
@@ -414,9 +415,9 @@ class PaperRetriever:
                 papers.append(paper)
                 
         except requests.exceptions.RequestException as e:
-            pass
+            logger.warning("API request failed: %s", e)
         except Exception as e:
-            pass
+            logger.warning("Retrieval error: %s", e)
             
         return papers
     
@@ -497,9 +498,9 @@ class PaperRetriever:
                 time.sleep(0.1)  # 遵守速率限制
                 
         except requests.exceptions.RequestException as e:
-            pass
+            logger.warning("API request failed: %s", e)
         except Exception as e:
-            pass
+            logger.warning("Retrieval error: %s", e)
             
         return papers
     
@@ -572,9 +573,9 @@ class PaperRetriever:
                 papers.append(paper)
                 
         except requests.exceptions.RequestException as e:
-            pass
+            logger.warning("API request failed: %s", e)
         except Exception as e:
-            pass
+            logger.warning("Retrieval error: %s", e)
             
         return papers
     
@@ -621,7 +622,7 @@ class PaperRetriever:
                 json.dump(cache_data, f, ensure_ascii=False, indent=2)
                 
         except Exception as e:
-            pass
+            logger.warning("Retrieval error: %s", e)
     
     def load_from_cache(self, query: str) -> Optional[List[Dict]]:
         """从缓存加载搜索结果"""
@@ -638,7 +639,7 @@ class PaperRetriever:
                     return cache_data['papers']
                     
         except Exception as e:
-            pass
+            logger.warning("Retrieval error: %s", e)
             
         return None
     

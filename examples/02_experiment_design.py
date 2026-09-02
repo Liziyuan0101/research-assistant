@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-from main import ResearchAssistant
+from research_assistant import ResearchAssistant
 
 
 def demo_search_papers(assistant):

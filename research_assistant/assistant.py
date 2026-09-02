@@ -8,35 +8,37 @@ Research Assistant - Main Application
 3. Qwen2.5-7B LoRA微调：学术写作优化 (ROUGE-L: 0.47, 术语准确率: 89%)
 """
 
-import os
 import yaml
 from pathlib import Path
 from typing import Dict, List, Optional
-import argparse
 
 # 加载 .env 文件中的环境变量
 from dotenv import load_dotenv
 load_dotenv()
 
-from modules.paper_retrieval import PaperRetriever, PaperInterpreter
-from modules.paper_retrieval import HybridRetriever, RetrievalEvaluator
-from modules.experiment_agent import ExperimentPlanner
-from modules.writing_assistant import AcademicWriter, CitationManager
-from tools import CodeGenerator, DataAnalyzer, Visualizer
-from utils.query_enhancer import QueryEnhancer
+from .retrieval import PaperRetriever, PaperInterpreter
+from .retrieval import HybridRetriever, RetrievalEvaluator
+from .experiment import ExperimentPlanner
+from .writing import AcademicWriter, CitationManager
+from .tools import CodeGenerator, DataAnalyzer, Visualizer
+from .utils.query_enhancer import QueryEnhancer
 
 # 可选导入
 try:
-    from modules.agents import ResearchAgentGraph
+    from .agents import ResearchAgentGraph
     HAS_LANGGRAPH = True
 except ImportError:
     HAS_LANGGRAPH = False
 
 try:
-    from modules.training import LoRATrainer, TrainingConfig, WritingEvaluator
+    from optional.finetune import LoRATrainer, TrainingConfig, WritingEvaluator
     HAS_TRAINING = True
 except ImportError:
     HAS_TRAINING = False
+
+# 路径锚点:config 随包迁移(research_assistant/config/),运行时数据仍在项目根
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_CONFIG_DIR = Path(__file__).resolve().parent / 'config'
 
 
 class ResearchAssistant:
@@ -54,12 +56,12 @@ class ResearchAssistant:
         
         # 加载配置
         if config_path is None:
-            config_path = Path(__file__).parent / 'config' / 'config.yaml'
-        
+            config_path = _CONFIG_DIR / 'config.yaml'
+
         self.config = self._load_config(config_path)
-        
+
         # 加载prompts
-        prompts_path = Path(__file__).parent / 'config' / 'prompts.yaml'
+        prompts_path = _CONFIG_DIR / 'prompts.yaml'
         self.prompts = self._load_config(prompts_path)
         
         # 论文检索模块（API搜索）
@@ -77,7 +79,7 @@ class ResearchAssistant:
             try:
                 self.hybrid_retriever = HybridRetriever(
                     config=hybrid_config,
-                    data_dir=str(Path(__file__).parent / 'data'),
+                    data_dir=str(_PROJECT_ROOT / 'data'),
                     verbose=verbose
                 )
             except Exception as e:
@@ -500,7 +502,7 @@ class ResearchAssistant:
             output_dir: 输出目录（默认为项目根目录下的output）
         """
         if output_dir is None:
-            output_dir = Path(__file__).parent / "output"
+            output_dir = _PROJECT_ROOT / "output"
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
         
@@ -537,34 +539,3 @@ class ResearchAssistant:
             f.write(code)
         
         print(f"\n✅ Complete workflow finished! Check {output_dir} for results.")
-
-
-def main():
-    """主函数"""
-    parser = argparse.ArgumentParser(description='Research Paper Intelligent Assistant')
-    parser.add_argument('--config', type=str, help='Path to config file')
-    parser.add_argument('--query', type=str, help='Search query for papers')
-    parser.add_argument('--workflow', action='store_true', help='Run complete workflow')
-    
-    args = parser.parse_args()
-    
-    # 初始化助手
-    assistant = ResearchAssistant(config_path=args.config)
-    
-    if args.workflow and args.query:
-        # 运行完整工作流
-        assistant.complete_research_workflow(args.query)
-    elif args.query:
-        # 仅搜索论文
-        papers = assistant.search_papers(args.query)
-        print(f"\n✅ Found {len(papers)} papers:")
-        for i, paper in enumerate(papers, 1):
-            print(f"\n{i}. {paper['title']}")
-            print(f"   Authors: {', '.join(paper['authors'][:3])}")
-            print(f"   Published: {paper.get('published', 'N/A')}")
-    else:
-        print("Research Assistant initialized. Use --query to search papers or --workflow for complete workflow.")
-
-
-if __name__ == "__main__":
-    main()

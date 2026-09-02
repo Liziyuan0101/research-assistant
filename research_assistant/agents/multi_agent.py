@@ -12,10 +12,13 @@ LangGraph Multi-Agent Framework
 
 import os
 import json
+import logging
 from typing import Dict, List, Any, Optional, TypedDict, Annotated, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+
+logger = logging.getLogger(__name__)
 
 try:
     from langgraph.graph import StateGraph, END
@@ -596,8 +599,8 @@ class ResearchAgentGraph:
                                 output = json.loads(output)
                             if isinstance(output, dict) and 'results' in output:
                                 state['retrieved_papers'].extend(output['results'])
-                        except:
-                            pass
+                        except Exception as e:
+                            logger.warning("Agent result parse failed: %s", e)
         
         state['iteration'] += 1
         return state

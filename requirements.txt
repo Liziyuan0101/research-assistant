@@ -39,9 +39,6 @@ pymupdf>=1.23.0  # Fast PDF parsing with PyMuPDF (fitz)
 pymupdf4llm>=0.0.5  # PDF to Markdown conversion
 langchain-text-splitters>=0.0.1  # MarkdownHeaderTextSplitter
 
-# Database (Metadata Layer)
-sqlalchemy>=2.0.0
-
 # Utilities
 pyyaml>=6.0
 python-dotenv>=1.0.0

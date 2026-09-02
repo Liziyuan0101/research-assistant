@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "research-assistant"
+version = "0.1.0"
+description = "科研论文智能助手 - Research paper intelligent assistant (hybrid retrieval + multi-agent + academic writing)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    # LLM
+    "openai>=1.0.0",
+    "langchain>=0.1.0",
+    "langchain-community>=0.0.10",
+    "langchain-openai>=0.0.5",
+    # Paper retrieval
+    "arxiv>=2.0.0",
+    "scholarly>=1.7.0",
+    "semanticscholar>=0.8.0",
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0",
+    # Document processing
+    "pypdf>=3.17.0",
+    "python-docx>=1.1.0",
+    "pdfplumber>=0.10.0",
+    "pymupdf>=1.23.0",
+    "pymupdf4llm>=0.0.5",
+    "langchain-text-splitters>=0.0.1",
+    # Data & visualization
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "scikit-learn>=1.3.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+    "plotly>=5.17.0",
+    # Utilities
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0.0",
+    "tqdm>=4.66.0",
+    "tenacity>=8.2.0",
+]
+
+[project.scripts]
+research-assistant = "research_assistant.cli:main"
+
+[project.optional-dependencies]
+# Multi-Agent (LangGraph). Spec tier: "agent".
+agent = [
+    "langgraph>=0.0.40",
+    "langchain-core>=0.1.0",
+    "chromadb>=0.4.0",
+]
+# Heavy / GPU deps: hybrid retrieval (BGE-M3, FAISS) + LoRA fine-tuning.
+# Spec tier: "finetune". Core install stays torch/GPU-free.
+finetune = [
+    "torch>=2.0.0",
+    "accelerate>=0.24.0",
+    "bitsandbytes>=0.41.0",
+    "peft>=0.7.0",
+    "trl>=0.7.0",
+    "datasets>=2.14.0",
+    "evaluate>=0.4.0",
+    "rouge-score>=0.1.2",
+    "ragas>=0.1.0",
+    "FlagEmbedding>=1.2.0",
+    "rank-bm25>=0.2.2",
+    "sentence-transformers>=2.2.0",
+    "transformers>=4.35.0",
+    "faiss-gpu>=1.7.4",
+]
+
+[tool.setuptools.packages.find]
+include = ["research_assistant*"]

@@ -18,11 +18,14 @@ PDF 转 Markdown 处理器
 import os
 import re
 import base64
+import logging
 import tempfile
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple, Any
 from dataclasses import dataclass, field
 from enum import Enum
+
+logger = logging.getLogger(__name__)
 
 # PyMuPDF
 try:
@@ -447,8 +450,8 @@ class PDFMarkdownProcessor:
                             caption=caption
                         ))
                         table_id += 1
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Table extraction failed: %s", e)
         
         return tables
     

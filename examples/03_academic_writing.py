@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from main import ResearchAssistant
+from research_assistant import ResearchAssistant
 
 
 def demo_search_papers(assistant):

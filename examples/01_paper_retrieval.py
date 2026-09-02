@@ -28,8 +28,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-from main import ResearchAssistant
-from modules.paper_retrieval.evaluation import RAGEvaluator, HAS_RAGAS
+from research_assistant import ResearchAssistant
+from research_assistant.retrieval.evaluation import RAGEvaluator, HAS_RAGAS
 
 
 def demo_api_search(assistant):

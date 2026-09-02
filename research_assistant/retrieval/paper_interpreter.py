@@ -9,10 +9,7 @@ from typing import Dict, List, Optional
 from pathlib import Path
 import json
 
-try:
-    from openai import OpenAI
-except ImportError:
-    OpenAI = None
+from ..utils.llm import create_openai_client
 
 
 class PaperInterpreter:
@@ -24,24 +21,8 @@ class PaperInterpreter:
         
         # 初始化LLM客户端
         llm_config = config.get('llm', {})
-        api_keys_config = config.get('api_keys', {})
         
-        if OpenAI is None:
-            print("⚠️ OpenAI library not installed. Some features may not work.")
-            self.client = None
-        else:
-            # 优先从环境变量读取 DeepSeek API Key，然后是 OpenAI API Key
-            api_key = os.getenv('DEEPSEEK_API_KEY') or os.getenv('OPENAI_API_KEY') or api_keys_config.get('openai_api_key')
-            base_url = llm_config.get('base_url') or api_keys_config.get('openai_base_url')
-            
-            if api_key:
-                self.client = OpenAI(
-                    api_key=api_key,
-                    base_url=base_url
-                )
-            else:
-                print("⚠️ API key not found. Please set DEEPSEEK_API_KEY or OPENAI_API_KEY environment variable.")
-                self.client = None
+        self.client = create_openai_client(config)
         
         self.model = llm_config.get('model', 'deepseek-chat')
         self.temperature = llm_config.get('temperature', 0.7)
@@ -304,7 +285,7 @@ if __name__ == "__main__":
     }
     
     # 加载prompts
-    prompts_path = Path(__file__).parent.parent.parent / 'config' / 'prompts.yaml'
+    prompts_path = Path(__file__).parent.parent / 'config' / 'prompts.yaml'
     if prompts_path.exists():
         with open(prompts_path, 'r', encoding='utf-8') as f:
             prompts = yaml.safe_load(f)
