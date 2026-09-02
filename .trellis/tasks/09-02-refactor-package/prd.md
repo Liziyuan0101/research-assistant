@@ -74,3 +74,13 @@ Behavior must stay equivalent to today.
 
 - **Scope** = A (mechanical restructure) + B (debt cleanup) only. `memory.py` and `tests/` are deferred to separate follow-up tasks.
 - **Transition & rollback** = initialize a git repo and commit a baseline **first**, then a clean migration (delete old `modules/`/`tools/`/`utils/`, new package is the only structure). No backward-compat shims.
+
+## Outcome (as delivered)
+
+Delivered in commit `e11a81c` (baseline `d41e71b`):
+
+- **A (mechanical restructure)** — done: `modules/*` → `research_assistant/{retrieval,agents,experiment,writing}`, `tools/`/`utils/`/`config/` → package, `training/` → `optional/finetune`, `main.py` → `assistant.py` + `cli.py`, `pyproject.toml` (core/agent/finetune extras + `research-assistant` console script).
+- **B (debt cleanup)** — done: silent `except: pass` → `logger.warning` (17 sites); OpenAI client construction centralized into `utils/llm.py` (4 config-based sites); `sqlalchemy` removed.
+- **B (deferred)** — `print()` → logger migration (large, behavior-changing, ~40 sites across ~10 modules); 3 bare `except:` (with fallback, not silent) → `except Exception`; 2 env-only lazy `openai.OpenAI(...)` sites + 2 LangChain `ChatOpenAI` sites still use their own (genuinely different) patterns.
+
+Deferred follow-ups: `memory.py`, `tests/`, backfilling the `tools/` subpackage into `.trellis/spec/backend/directory-structure.md` (the spec target omitted it).
