@@ -11,6 +11,9 @@ from typing import Dict, List, Optional
 from pathlib import Path
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 class Visualizer:
     """可视化工具"""
     
@@ -63,7 +66,7 @@ class Visualizer:
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
         
-        print(f"📊 Training history plot saved to {output_path}")
+        logger.info(f"📊 Training history plot saved to {output_path}")
     
     def plot_predictions(
         self,
@@ -106,7 +109,7 @@ class Visualizer:
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
         
-        print(f"📊 Predictions plot saved to {output_path}")
+        logger.info(f"📊 Predictions plot saved to {output_path}")
     
     def plot_feature_importance(
         self,
@@ -137,7 +140,7 @@ class Visualizer:
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
         
-        print(f"📊 Feature importance plot saved to {output_path}")
+        logger.info(f"📊 Feature importance plot saved to {output_path}")
     
     def plot_correlation_matrix(
         self,
@@ -165,7 +168,7 @@ class Visualizer:
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
         
-        print(f"📊 Correlation matrix saved to {output_path}")
+        logger.info(f"📊 Correlation matrix saved to {output_path}")
     
     def plot_distribution(
         self,
@@ -203,7 +206,7 @@ class Visualizer:
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
         
-        print(f"📊 Distribution plot saved to {output_path}")
+        logger.info(f"📊 Distribution plot saved to {output_path}")
     
     def plot_time_series(
         self,
@@ -237,7 +240,7 @@ class Visualizer:
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
         
-        print(f"📊 Time series plot saved to {output_path}")
+        logger.info(f"📊 Time series plot saved to {output_path}")
     
     def plot_confusion_matrix(
         self,
@@ -269,7 +272,7 @@ class Visualizer:
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
         
-        print(f"📊 Confusion matrix saved to {output_path}")
+        logger.info(f"📊 Confusion matrix saved to {output_path}")
     
     def create_experiment_dashboard(
         self,
@@ -292,7 +295,7 @@ class Visualizer:
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
         
-        print(f"📊 Experiment dashboard saved to {output_path}")
+        logger.info(f"📊 Experiment dashboard saved to {output_path}")
 
 
 if __name__ == "__main__":

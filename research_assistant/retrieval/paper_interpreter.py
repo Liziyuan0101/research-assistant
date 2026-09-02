@@ -12,6 +12,9 @@ import json
 from ..utils.llm import create_openai_client
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 class PaperInterpreter:
     """论文解读器，使用LLM分析论文内容"""
     
@@ -38,7 +41,7 @@ class PaperInterpreter:
         Returns:
             解读结果
         """
-        print(f"📖 Interpreting paper: {paper.get('title', 'Unknown')}")
+        logger.info(f"📖 Interpreting paper: {paper.get('title', 'Unknown')}")
         
         interpretation = {
             'paper_id': paper.get('id', ''),
@@ -79,7 +82,7 @@ class PaperInterpreter:
             return response.choices[0].message.content.strip()
             
         except Exception as e:
-            print(f"❌ Error generating summary: {e}")
+            logger.error(f"❌ Error generating summary: {e}")
             return self._fallback_summary(paper)
     
     def extract_key_findings(self, paper: Dict) -> List[str]:
@@ -110,7 +113,7 @@ class PaperInterpreter:
             return findings
             
         except Exception as e:
-            print(f"❌ Error extracting key findings: {e}")
+            logger.error(f"❌ Error extracting key findings: {e}")
             return []
     
     def extract_methodology(self, paper: Dict) -> Dict:
@@ -142,7 +145,7 @@ class PaperInterpreter:
             }
             
         except Exception as e:
-            print(f"❌ Error extracting methodology: {e}")
+            logger.error(f"❌ Error extracting methodology: {e}")
             return {}
     
     def extract_contributions(self, paper: Dict) -> List[str]:
@@ -213,7 +216,7 @@ class PaperInterpreter:
             return response.choices[0].message.content.strip()
             
         except Exception as e:
-            print(f"❌ Error comparing papers: {e}")
+            logger.error(f"❌ Error comparing papers: {e}")
             return "Error occurred during paper comparison."
     
     def generate_literature_review(self, papers: List[Dict]) -> str:
@@ -248,7 +251,7 @@ class PaperInterpreter:
             return response.choices[0].message.content.strip()
             
         except Exception as e:
-            print(f"❌ Error generating literature review: {e}")
+            logger.error(f"❌ Error generating literature review: {e}")
             return "Error occurred during literature review generation."
     
     def _fallback_summary(self, paper: Dict) -> str:
@@ -268,10 +271,10 @@ class PaperInterpreter:
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(interpretation, f, ensure_ascii=False, indent=2)
             
-            print(f"💾 Saved interpretation to {output_path}")
+            logger.info(f"💾 Saved interpretation to {output_path}")
             
         except Exception as e:
-            print(f"❌ Error saving interpretation: {e}")
+            logger.error(f"❌ Error saving interpretation: {e}")
 
 
 if __name__ == "__main__":

@@ -46,7 +46,7 @@ try:
     HAS_BGE = True
 except ImportError:
     HAS_BGE = False
-    print("⚠️ FlagEmbedding not installed. Run: pip install FlagEmbedding")
+    logger.warning("⚠️ FlagEmbedding not installed. Run: pip install FlagEmbedding")
 
 # PDF Processing
 try:

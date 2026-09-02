@@ -10,6 +10,9 @@ from pathlib import Path
 import json
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 class DataAnalyzer:
     """数据分析工具"""
     
@@ -26,7 +29,7 @@ class DataAnalyzer:
         Returns:
             分析结果
         """
-        print(f"📊 Analyzing dataset: {data_path}")
+        logger.info(f"📊 Analyzing dataset: {data_path}")
         
         try:
             # 加载数据
@@ -268,10 +271,10 @@ class DataAnalyzer:
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(report)
             
-            print(f"📄 Report saved to {output_path}")
+            logger.info(f"📄 Report saved to {output_path}")
             
         except Exception as e:
-            print(f"❌ Error generating report: {e}")
+            logger.error(f"❌ Error generating report: {e}")
 
 
 if __name__ == "__main__":

@@ -67,6 +67,9 @@ except ImportError:
     HAS_DATASETS = False
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 @dataclass
 class EvalSample:
     """评测样本"""
@@ -117,9 +120,9 @@ class RetrievalEvaluator:
             self.eval_samples = [
                 EvalSample(**sample) for sample in data.get('samples', [])
             ]
-            print(f"📂 Loaded {len(self.eval_samples)} evaluation samples")
+            logger.info(f"📂 Loaded {len(self.eval_samples)} evaluation samples")
         except Exception as e:
-            print(f"❌ Error loading eval data: {e}")
+            logger.error(f"❌ Error loading eval data: {e}")
     
     def save_eval_data(self, path: str):
         """保存评测数据"""
@@ -133,9 +136,9 @@ class RetrievalEvaluator:
             with open(path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             
-            print(f"💾 Saved {len(self.eval_samples)} samples to {path}")
+            logger.info(f"💾 Saved {len(self.eval_samples)} samples to {path}")
         except Exception as e:
-            print(f"❌ Error saving eval data: {e}")
+            logger.error(f"❌ Error saving eval data: {e}")
     
     def add_sample(self, sample: EvalSample):
         """添加评测样本"""
@@ -159,7 +162,7 @@ class RetrievalEvaluator:
             评测结果汇总
         """
         if not self.eval_samples:
-            print("⚠️ No evaluation samples loaded")
+            logger.warning("⚠️ No evaluation samples loaded")
             return {}
         
         self.eval_results = []
@@ -228,8 +231,8 @@ class RetrievalEvaluator:
             self.eval_results.append(result)
             
             if verbose:
-                print(f"Query: {sample.query[:50]}...")
-                print(f"  P@5: {precision_at_k.get(5, 0):.2%}, MRR: {mrr:.4f}")
+                logger.info(f"Query: {sample.query[:50]}...")
+                logger.info(f"  P@5: {precision_at_k.get(5, 0):.2%}, MRR: {mrr:.4f}")
         
         # 汇总结果
         summary = {
@@ -245,18 +248,18 @@ class RetrievalEvaluator:
         summary['metrics']['MRR'] = np.mean(all_mrrs)
         
         if verbose:
-            print("\n" + "="*60)
-            print("📊 EVALUATION SUMMARY")
-            print("="*60)
+            logger.info("\n" + "="*60)
+            logger.info("📊 EVALUATION SUMMARY")
+            logger.info("="*60)
             for metric, value in summary['metrics'].items():
-                print(f"  {metric}: {value:.4f} ({value:.2%})")
+                logger.info(f"  {metric}: {value:.4f} ({value:.2%})")
         
         return summary
     
     def generate_report(self, output_path: str):
         """生成详细评测报告"""
         if not self.eval_results:
-            print("⚠️ No evaluation results to report")
+            logger.warning("⚠️ No evaluation results to report")
             return
         
         report = {
@@ -283,7 +286,7 @@ class RetrievalEvaluator:
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
         
-        print(f"📄 Report saved to {output_path}")
+        logger.info(f"📄 Report saved to {output_path}")
 
 
 class RAGASTestsetGenerator:
@@ -323,7 +326,7 @@ class RAGASTestsetGenerator:
             生成的评测样本列表
         """
         if not HAS_RAGAS:
-            print("⚠️ RAGAS not available, using fallback generation")
+            logger.warning("⚠️ RAGAS not available, using fallback generation")
             return self._fallback_generate(papers, num_samples)
         
         if distribution is None:
@@ -381,7 +384,7 @@ class RAGASTestsetGenerator:
             return samples
             
         except Exception as e:
-            print(f"❌ RAGAS generation failed: {e}")
+            logger.error(f"❌ RAGAS generation failed: {e}")
             return self._fallback_generate(papers, num_samples)
     
     def _fallback_generate(self, papers: List[Dict], num_samples: int) -> List[EvalSample]:
@@ -460,7 +463,7 @@ class RAGASTestsetGenerator:
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(annotation_data, f, ensure_ascii=False, indent=2)
         
-        print(f"📝 Exported {len(self.generated_samples)} samples for annotation to {output_path}")
+        logger.info(f"📝 Exported {len(self.generated_samples)} samples for annotation to {output_path}")
     
     def load_annotated_data(self, path: str) -> List[EvalSample]:
         """加载人工标注后的数据"""
@@ -473,11 +476,11 @@ class RAGASTestsetGenerator:
             # 过滤掉没有标注 relevant_paper_ids 的样本
             valid_samples = [s for s in samples if s.relevant_paper_ids]
             
-            print(f"📂 Loaded {len(valid_samples)} annotated samples (out of {len(samples)} total)")
+            logger.info(f"📂 Loaded {len(valid_samples)} annotated samples (out of {len(samples)} total)")
             return valid_samples
             
         except Exception as e:
-            print(f"❌ Error loading annotated data: {e}")
+            logger.error(f"❌ Error loading annotated data: {e}")
             return []
 
 
@@ -524,12 +527,12 @@ def get_default_llm():
     """获取默认 LLM，优先使用 DeepSeek，其次 OpenAI"""
     llm = create_deepseek_llm()
     if llm:
-        print("📌 使用 DeepSeek 作为 RAGAS 评测 LLM")
+        logger.info("📌 使用 DeepSeek 作为 RAGAS 评测 LLM")
         return llm
     
     llm = create_openai_llm()
     if llm:
-        print("📌 使用 OpenAI 作为 RAGAS 评测 LLM")
+        logger.info("📌 使用 OpenAI 作为 RAGAS 评测 LLM")
         return llm
     
     return None
@@ -578,12 +581,12 @@ class RAGEvaluator:
             评测结果
         """
         if not HAS_RAGAS or not HAS_DATASETS:
-            print("⚠️ RAGAS or datasets not available")
+            logger.warning("⚠️ RAGAS or datasets not available")
             return self._fallback_evaluate(questions, answers, contexts)
         
         if self.llm is None:
-            print("⚠️ LLM not configured, using fallback evaluation")
-            print("   设置 DEEPSEEK_API_KEY 或 OPENAI_API_KEY 环境变量")
+            logger.warning("⚠️ LLM not configured, using fallback evaluation")
+            logger.info("   设置 DEEPSEEK_API_KEY 或 OPENAI_API_KEY 环境变量")
             return self._fallback_evaluate(questions, answers, contexts)
         
         # 准备数据集
@@ -618,7 +621,7 @@ class RAGEvaluator:
         #     metrics.append(answer_relevancy)
         
         if not metrics:
-            print("⚠️ 没有可用的评测指标")
+            logger.warning("⚠️ 没有可用的评测指标")
             return self._fallback_evaluate(questions, answers, contexts)
         
         try:
@@ -636,7 +639,7 @@ class RAGEvaluator:
             }
             
         except Exception as e:
-            print(f"❌ RAGAS evaluation failed: {e}")
+            logger.error(f"❌ RAGAS evaluation failed: {e}")
             return self._fallback_evaluate(questions, answers, contexts)
     
     def _fallback_evaluate(
@@ -727,7 +730,7 @@ def create_sample_eval_data(output_path: str, num_samples: int = 20):
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     
-    print(f"📝 Created sample evaluation data with {len(samples)} samples at {output_path}")
+    logger.info(f"📝 Created sample evaluation data with {len(samples)} samples at {output_path}")
 
 
 if __name__ == "__main__":

@@ -6,10 +6,13 @@ Research Assistant - Command Line Interface
 import argparse
 
 from .assistant import ResearchAssistant
+from .utils.logger import setup_logger
 
 
 def main():
     """主函数"""
+    # 配置日志输出,让库模块的状态/错误(INFO 及以上)通过 logging 可见
+    setup_logger('research_assistant')
     parser = argparse.ArgumentParser(description='Research Paper Intelligent Assistant')
     parser.add_argument('--config', type=str, help='Path to config file')
     parser.add_argument('--query', type=str, help='Search query for papers')

@@ -12,6 +12,9 @@ import yaml
 from ..utils.llm import create_openai_client
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 class ExperimentPlanner:
     """实验规划器，基于研究问题和论文知识自动设计实验方案"""
     
@@ -45,7 +48,7 @@ class ExperimentPlanner:
         Returns:
             实验方案字典
         """
-        print(f"🔬 Designing experiment for: {research_question}")
+        logger.info(f"🔬 Designing experiment for: {research_question}")
         
         # 构建论文上下文
         papers_text = self._format_papers_context(papers_context) if papers_context else "无相关论文参考"
@@ -84,11 +87,11 @@ class ExperimentPlanner:
             # 解析实验方案
             experiment_plan = self._parse_experiment_plan(plan_text, research_question)
             
-            print("✅ Experiment plan generated")
+            logger.info("✅ Experiment plan generated")
             return experiment_plan
             
         except Exception as e:
-            print(f"❌ Error designing experiment: {e}")
+            logger.error(f"❌ Error designing experiment: {e}")
             return self._fallback_plan(research_question)
     
     def suggest_parameters(
@@ -110,7 +113,7 @@ class ExperimentPlanner:
         Returns:
             参数推荐
         """
-        print(f"⚙️ Suggesting parameters for {model_type} on {task_type}")
+        logger.info(f"⚙️ Suggesting parameters for {model_type} on {task_type}")
         
         prompt_template = self.prompts.get('experiment_design', {}).get('parameter_suggestion', '')
         
@@ -153,7 +156,7 @@ class ExperimentPlanner:
             return parameters
             
         except Exception as e:
-            print(f"❌ Error suggesting parameters: {e}")
+            logger.error(f"❌ Error suggesting parameters: {e}")
             return self._default_parameters(model_type, task_type)
     
     def generate_experiment_code(
@@ -171,7 +174,7 @@ class ExperimentPlanner:
         Returns:
             生成的代码
         """
-        print(f"💻 Generating {framework} code for experiment")
+        logger.info(f"💻 Generating {framework} code for experiment")
         
         prompt_template = self.prompts.get('experiment_design', {}).get('code_generation', '')
         
@@ -206,7 +209,7 @@ class ExperimentPlanner:
             return code
             
         except Exception as e:
-            print(f"❌ Error generating code: {e}")
+            logger.error(f"❌ Error generating code: {e}")
             return self._template_code(experiment_plan, framework)
     
     def refine_plan(
@@ -224,7 +227,7 @@ class ExperimentPlanner:
         Returns:
             优化后的方案
         """
-        print("🔄 Refining experiment plan based on feedback")
+        logger.info("🔄 Refining experiment plan based on feedback")
         
         prompt = f"""
 请根据以下反馈优化实验方案：
@@ -264,7 +267,7 @@ class ExperimentPlanner:
             return refined_plan
             
         except Exception as e:
-            print(f"❌ Error refining plan: {e}")
+            logger.error(f"❌ Error refining plan: {e}")
             return original_plan
     
     def _format_papers_context(self, papers: List[Dict]) -> str:

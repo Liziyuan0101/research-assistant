@@ -41,6 +41,9 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _CONFIG_DIR = Path(__file__).resolve().parent / 'config'
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 class ResearchAssistant:
     """科研论文智能助手主类"""
     
@@ -132,7 +135,7 @@ class ResearchAssistant:
                 config = yaml.safe_load(f)
             return config
         except Exception as e:
-            print(f"⚠️ Error loading config from {config_path}: {e}")
+            logger.warning(f"⚠️ Error loading config from {config_path}: {e}")
             return {}
     
     # ==================== 论文检索与解读 ====================
@@ -167,8 +170,8 @@ class ResearchAssistant:
             search_query = enhanced_result['suggested_query']
             
             if verbose:
-                print(f"原始查询: {query}")
-                print(f"增强查询: {search_query}")
+                logger.info(f"原始查询: {query}")
+                logger.info(f"增强查询: {search_query}")
         else:
             search_query = query
         
@@ -177,7 +180,7 @@ class ResearchAssistant:
             cached_papers = self.paper_retriever.load_from_cache(search_query)
             if cached_papers:
                 if verbose:
-                    print(f"✅ 从缓存加载 {len(cached_papers)} 篇论文")
+                    logger.info(f"✅ 从缓存加载 {len(cached_papers)} 篇论文")
                 return cached_papers[:max_results]
         
         # 搜索论文
@@ -194,7 +197,7 @@ class ResearchAssistant:
                 self.hybrid_retriever.add_papers(papers, verbose=verbose)
             except Exception as e:
                 if verbose:
-                    print(f"⚠️ 索引失败: {e}")
+                    logger.warning(f"⚠️ 索引失败: {e}")
         
         return papers
     
@@ -237,7 +240,7 @@ class ResearchAssistant:
         """
         if self.hybrid_retriever is None:
             if verbose:
-                print("⚠️ 混合检索器未初始化")
+                logger.warning("⚠️ 混合检索器未初始化")
             return []
         
         results = self.hybrid_retriever.search(
@@ -262,7 +265,7 @@ class ResearchAssistant:
             添加的chunk数量
         """
         if self.hybrid_retriever is None:
-            print("⚠️ Hybrid retriever not available")
+            logger.warning("⚠️ Hybrid retriever not available")
             return 0
         
         return self.hybrid_retriever.add_papers(papers, process_pdf)
@@ -281,21 +284,21 @@ class ResearchAssistant:
             执行结果
         """
         if self.agent_graph is None:
-            print("⚠️ Multi-Agent system not available")
+            logger.warning("⚠️ Multi-Agent system not available")
             return {'success': False, 'error': 'Agent system not initialized'}
         
-        print(f"\n{'='*60}")
-        print(f"🤖 MULTI-AGENT TASK")
-        print(f"{'='*60}")
-        print(f"Task: {task}")
-        print(f"{'='*60}\n")
+        logger.info(f"\n{'='*60}")
+        logger.info(f"🤖 MULTI-AGENT TASK")
+        logger.info(f"{'='*60}")
+        logger.info(f"Task: {task}")
+        logger.info(f"{'='*60}\n")
         
         result = self.agent_graph.run(task, max_iterations)
         
         if result.get('success'):
-            print(f"✅ Task completed successfully")
+            logger.info(f"✅ Task completed successfully")
         else:
-            print(f"❌ Task failed: {result.get('error', 'Unknown error')}")
+            logger.error(f"❌ Task failed: {result.get('error', 'Unknown error')}")
         
         return result
     
@@ -336,9 +339,9 @@ class ResearchAssistant:
         Returns:
             实验方案
         """
-        print(f"\n{'='*60}")
-        print(f"🔬 EXPERIMENT DESIGN")
-        print(f"{'='*60}\n")
+        logger.info(f"\n{'='*60}")
+        logger.info(f"🔬 EXPERIMENT DESIGN")
+        logger.info(f"{'='*60}\n")
         
         # 如果没有提供论文，尝试从混合检索获取
         if papers is None and self.hybrid_retriever:
@@ -401,9 +404,9 @@ class ResearchAssistant:
         Returns:
             生成的摘要
         """
-        print(f"\n{'='*60}")
-        print(f"✍️ GENERATING ABSTRACT")
-        print(f"{'='*60}\n")
+        logger.info(f"\n{'='*60}")
+        logger.info(f"✍️ GENERATING ABSTRACT")
+        logger.info(f"{'='*60}\n")
         
         abstract = self.academic_writer.generate_abstract(
             title=title,
@@ -429,9 +432,9 @@ class ResearchAssistant:
             paper_info: 论文信息
             output_path: 输出路径
         """
-        print(f"\n{'='*60}")
-        print(f"📝 GENERATING FULL PAPER")
-        print(f"{'='*60}\n")
+        logger.info(f"\n{'='*60}")
+        logger.info(f"📝 GENERATING FULL PAPER")
+        logger.info(f"{'='*60}\n")
         
         sections = []
         
@@ -485,7 +488,7 @@ class ResearchAssistant:
         full_paper = '\n\n---\n\n'.join(sections)
         self.academic_writer.save_document(full_paper, output_path)
         
-        print(f"✅ Full paper generated and saved to {output_path}")
+        logger.info(f"✅ Full paper generated and saved to {output_path}")
     
     # ==================== 工作流示例 ====================
     
@@ -506,10 +509,10 @@ class ResearchAssistant:
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
         
-        print(f"\n{'='*60}")
-        print(f"🎯 COMPLETE RESEARCH WORKFLOW")
-        print(f"Research Question: {research_question}")
-        print(f"{'='*60}\n")
+        logger.info(f"\n{'='*60}")
+        logger.info(f"🎯 COMPLETE RESEARCH WORKFLOW")
+        logger.info(f"Research Question: {research_question}")
+        logger.info(f"{'='*60}\n")
         
         # 1. 搜索相关论文
         papers = self.search_papers(research_question, max_results=5)
@@ -538,4 +541,4 @@ class ResearchAssistant:
         with open(output_path / 'experiment_code.py', 'w', encoding='utf-8') as f:
             f.write(code)
         
-        print(f"\n✅ Complete workflow finished! Check {output_dir} for results.")
+        logger.info(f"\n✅ Complete workflow finished! Check {output_dir} for results.")

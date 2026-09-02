@@ -27,7 +27,7 @@ except ImportError:
     HAS_LANGGRAPH = False
     StateGraph = None
     END = None
-    print("⚠️ LangGraph not installed. Run: pip install langgraph")
+    logger.warning("⚠️ LangGraph not installed. Run: pip install langgraph")
 
 try:
     from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage, ToolMessage
@@ -44,7 +44,7 @@ except ImportError:
     ChatPromptTemplate = None
     MessagesPlaceholder = None
     ChatOpenAI = None
-    print("⚠️ LangChain not installed")
+    logger.warning("⚠️ LangChain not installed")
 
 from .tools import (
     PythonExecutorTool,
@@ -386,7 +386,7 @@ class ResearchAgentGraph:
             )
         else:
             self.llm = None
-            print("⚠️ LLM not initialized (missing API key or LangChain)")
+            logger.warning("⚠️ LLM not initialized (missing API key or LangChain)")
         
         # 初始化工具
         self.tools = self._init_tools()

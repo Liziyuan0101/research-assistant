@@ -12,6 +12,9 @@ import yaml
 from ..utils.llm import create_openai_client
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 class AcademicWriter:
     """学术写作助手"""
     
@@ -54,7 +57,7 @@ class AcademicWriter:
         Returns:
             生成的摘要
         """
-        print(f"✍️ Generating abstract in {language}")
+        logger.info(f"✍️ Generating abstract in {language}")
         
         prompt_key = 'abstract' if language == 'zh' else 'abstract_en'
         prompt_template = self.prompts.get('academic_writing', {}).get(prompt_key, '')
@@ -90,7 +93,7 @@ class AcademicWriter:
             return abstract
             
         except Exception as e:
-            print(f"❌ Error generating abstract: {e}")
+            logger.error(f"❌ Error generating abstract: {e}")
             return self._fallback_abstract(title, keywords, background, methods, results, conclusion)
     
     def generate_introduction(
@@ -114,7 +117,7 @@ class AcademicWriter:
         Returns:
             生成的引言
         """
-        print(f"✍️ Generating introduction in {language}")
+        logger.info(f"✍️ Generating introduction in {language}")
         
         prompt_template = self.prompts.get('academic_writing', {}).get('introduction', '')
         
@@ -146,7 +149,7 @@ class AcademicWriter:
             return introduction
             
         except Exception as e:
-            print(f"❌ Error generating introduction: {e}")
+            logger.error(f"❌ Error generating introduction: {e}")
             return f"# Introduction\n\n{topic}\n\n{research_question}"
     
     def generate_methodology(
@@ -168,7 +171,7 @@ class AcademicWriter:
         Returns:
             生成的方法论
         """
-        print(f"✍️ Generating methodology in {language}")
+        logger.info(f"✍️ Generating methodology in {language}")
         
         prompt_template = self.prompts.get('academic_writing', {}).get('methodology', '')
         
@@ -199,7 +202,7 @@ class AcademicWriter:
             return methodology
             
         except Exception as e:
-            print(f"❌ Error generating methodology: {e}")
+            logger.error(f"❌ Error generating methodology: {e}")
             return f"# Methodology\n\n## {method_name}\n\n{technical_details}"
     
     def generate_results(
@@ -223,7 +226,7 @@ class AcademicWriter:
         Returns:
             生成的结果部分
         """
-        print(f"✍️ Generating results section in {language}")
+        logger.info(f"✍️ Generating results section in {language}")
         
         prompt_template = self.prompts.get('academic_writing', {}).get('results', '')
         
@@ -255,7 +258,7 @@ class AcademicWriter:
             return results
             
         except Exception as e:
-            print(f"❌ Error generating results: {e}")
+            logger.error(f"❌ Error generating results: {e}")
             return f"# Results\n\n{experimental_setup}"
     
     def generate_discussion(
@@ -279,7 +282,7 @@ class AcademicWriter:
         Returns:
             生成的讨论部分
         """
-        print(f"✍️ Generating discussion in {language}")
+        logger.info(f"✍️ Generating discussion in {language}")
         
         prompt_template = self.prompts.get('academic_writing', {}).get('discussion', '')
         
@@ -311,7 +314,7 @@ class AcademicWriter:
             return discussion
             
         except Exception as e:
-            print(f"❌ Error generating discussion: {e}")
+            logger.error(f"❌ Error generating discussion: {e}")
             return f"# Discussion\n\n{interpretation}"
     
     def polish_text(
@@ -329,7 +332,7 @@ class AcademicWriter:
         Returns:
             润色后的文本
         """
-        print(f"✨ Polishing text in {language}")
+        logger.info(f"✨ Polishing text in {language}")
         
         prompt_template = self.prompts.get('academic_writing', {}).get('polish', '')
         
@@ -356,7 +359,7 @@ class AcademicWriter:
             return polished
             
         except Exception as e:
-            print(f"❌ Error polishing text: {e}")
+            logger.error(f"❌ Error polishing text: {e}")
             return original_text
     
     def translate_academic_text(
@@ -376,7 +379,7 @@ class AcademicWriter:
         Returns:
             翻译后的文本
         """
-        print(f"🌐 Translating from {source_lang} to {target_lang}")
+        logger.info(f"🌐 Translating from {source_lang} to {target_lang}")
         
         prompt = f"""
 请将以下学术文本从{source_lang}翻译为{target_lang}，保持学术性和专业性：
@@ -410,7 +413,7 @@ class AcademicWriter:
             return translated
             
         except Exception as e:
-            print(f"❌ Error translating text: {e}")
+            logger.error(f"❌ Error translating text: {e}")
             return text
     
     def _fallback_abstract(
@@ -449,17 +452,17 @@ class AcademicWriter:
                     doc.add_paragraph(content)
                     doc.save(output_file)
                 except ImportError:
-                    print("⚠️ python-docx not installed. Saving as text instead.")
+                    logger.warning("⚠️ python-docx not installed. Saving as text instead.")
                     with open(output_file, 'w', encoding='utf-8') as f:
                         f.write(content)
             else:
                 with open(output_file, 'w', encoding='utf-8') as f:
                     f.write(content)
             
-            print(f"💾 Document saved to {output_path}")
+            logger.info(f"💾 Document saved to {output_path}")
             
         except Exception as e:
-            print(f"❌ Error saving document: {e}")
+            logger.error(f"❌ Error saving document: {e}")
 
 
 if __name__ == "__main__":

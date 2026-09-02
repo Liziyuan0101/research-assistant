@@ -9,6 +9,9 @@ from pathlib import Path
 import json
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 class CitationManager:
     """引用管理器"""
     
@@ -262,9 +265,9 @@ class CitationManager:
         try:
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(bibtex_content)
-            print(f"📚 BibTeX exported to {output_path}")
+            logger.info(f"📚 BibTeX exported to {output_path}")
         except Exception as e:
-            print(f"❌ Error exporting BibTeX: {e}")
+            logger.error(f"❌ Error exporting BibTeX: {e}")
     
     def save_citations(self, output_path: str):
         """
@@ -282,10 +285,10 @@ class CitationManager:
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             
-            print(f"💾 Citations saved to {output_path}")
+            logger.info(f"💾 Citations saved to {output_path}")
             
         except Exception as e:
-            print(f"❌ Error saving citations: {e}")
+            logger.error(f"❌ Error saving citations: {e}")
     
     def load_citations(self, input_path: str):
         """
@@ -302,16 +305,16 @@ class CitationManager:
             self.citations = data.get('citations', [])
             self.citation_counter = len(self.citations) + 1
             
-            print(f"📂 Loaded {len(self.citations)} citations")
+            logger.info(f"📂 Loaded {len(self.citations)} citations")
             
         except Exception as e:
-            print(f"❌ Error loading citations: {e}")
+            logger.error(f"❌ Error loading citations: {e}")
     
     def clear_citations(self):
         """清空所有引用"""
         self.citations = []
         self.citation_counter = 1
-        print("🗑️ Citations cleared")
+        logger.info("🗑️ Citations cleared")
 
 
 if __name__ == "__main__":

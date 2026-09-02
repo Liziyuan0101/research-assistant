@@ -10,6 +10,9 @@ from pathlib import Path
 from ..utils.llm import create_openai_client
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 class CodeGenerator:
     """代码生成工具"""
     
@@ -88,7 +91,7 @@ class CodeGenerator:
             return code
             
         except Exception as e:
-            print(f"❌ Error generating training code: {e}")
+            logger.error(f"❌ Error generating training code: {e}")
             return self._template_training_code(model_type, framework)
     
     def generate_evaluation_code(
@@ -141,7 +144,7 @@ class CodeGenerator:
             return code
             
         except Exception as e:
-            print(f"❌ Error generating evaluation code: {e}")
+            logger.error(f"❌ Error generating evaluation code: {e}")
             return self._template_evaluation_code(metrics, framework)
     
     def generate_data_preprocessing_code(
@@ -194,7 +197,7 @@ class CodeGenerator:
             return code
             
         except Exception as e:
-            print(f"❌ Error generating preprocessing code: {e}")
+            logger.error(f"❌ Error generating preprocessing code: {e}")
             return self._template_preprocessing_code()
     
     def _template_training_code(self, model_type: str, framework: str) -> str:
@@ -295,7 +298,7 @@ def main():
         train_loss = train_epoch(model, train_loader, criterion, optimizer, device)
         val_loss = validate(model, val_loader, criterion, device)
         
-        print(f'Epoch {{epoch+1}}/{{epochs}}: Train Loss={{train_loss:.4f}}, Val Loss={{val_loss:.4f}}')
+        logger.info(f'Epoch {{epoch+1}}/{{epochs}}: Train Loss={{train_loss:.4f}}, Val Loss={{val_loss:.4f}}')
         
         # Early stopping
         if val_loss < best_val_loss:
@@ -305,7 +308,7 @@ def main():
         else:
             patience_counter += 1
             if patience_counter >= patience:
-                print('Early stopping triggered')
+                logger.info('Early stopping triggered')
                 break
 
 if __name__ == '__main__':

@@ -17,6 +17,9 @@ import numpy as np
 import pandas as pd
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 @dataclass
 class ToolResult:
     """工具执行结果"""

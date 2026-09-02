@@ -16,6 +16,9 @@ except ImportError:
     KeyBERT = None
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 class QueryEnhancer:
     """查询增强器 - 支持 KeyBERT 语义短语提取"""
     
@@ -136,7 +139,7 @@ class QueryEnhancer:
             )
             return keywords
         except Exception as e:
-            print(f"⚠️ KeyBERT extraction failed: {e}")
+            logger.warning(f"⚠️ KeyBERT extraction failed: {e}")
             return [(term, 1.0) for term in self._extract_key_terms_simple(query)]
     
     def _extract_key_terms_simple(self, query: str) -> List[str]:
