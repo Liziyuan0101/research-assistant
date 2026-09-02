@@ -24,6 +24,7 @@ from .experiment import ExperimentPlanner
 from .writing import AcademicWriter, CitationManager
 from .tools import CodeGenerator, DataAnalyzer, Visualizer
 from .utils.query_enhancer import QueryEnhancer
+from .utils.helpers import resolve_env_placeholders
 
 # 可选导入
 try:
@@ -140,7 +141,7 @@ class ResearchAssistant:
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
                 config = yaml.safe_load(f)
-            return config
+            return resolve_env_placeholders(config)
         except Exception as e:
             logger.warning(f"⚠️ Error loading config from {config_path}: {e}")
             return {}
@@ -215,6 +216,33 @@ class ResearchAssistant:
         
         return papers
     
+    def evaluate_retrieval(self, eval_data_path: Optional[str] = None, k_values: List[int] = None) -> Dict:
+        """运行检索评测并返回摘要。"""
+        from .retrieval.evaluation import create_sample_eval_data
+
+        if k_values is None:
+            k_values = [1, 3, 5]
+
+        if eval_data_path is None:
+            eval_data_path = str(_PROJECT_ROOT / 'data' / 'eval' / 'retrieval_eval.json')
+        if not Path(eval_data_path).exists():
+            Path(eval_data_path).parent.mkdir(parents=True, exist_ok=True)
+            create_sample_eval_data(eval_data_path, num_samples=5)
+
+        evaluator = RetrievalEvaluator(eval_data_path)
+        if not evaluator.eval_samples:
+            logger.warning("⚠️ 无评测样本")
+            return {}
+        if self.hybrid_retriever is None:
+            logger.warning("⚠️ 混合检索器未初始化,跳过评测")
+            return {}
+
+        try:
+            return evaluator.evaluate_retriever(self.hybrid_retriever, k_values=k_values, verbose=False)
+        except Exception as e:
+            logger.warning("⚠️ 评测失败: %s", e)
+            return {}
+
     def interpret_paper(self, paper: Dict, verbose: bool = True) -> Dict:
         """
         解读论文

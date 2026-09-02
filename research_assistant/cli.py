@@ -17,11 +17,21 @@ def main():
     parser.add_argument('--config', type=str, help='Path to config file')
     parser.add_argument('--query', type=str, help='Search query for papers')
     parser.add_argument('--workflow', action='store_true', help='Run complete workflow')
+    parser.add_argument('--eval', action='store_true', help='Run retrieval evaluation')
 
     args = parser.parse_args()
 
     # 初始化助手
     assistant = ResearchAssistant(config_path=args.config)
+
+    if args.eval:
+        summary = assistant.evaluate_retrieval()
+        if summary:
+            print("\n" + "=" * 50)
+            print(f"📊 评测摘要 ({summary.get('total_queries', 0)} 个查询)")
+            for metric, value in summary.get('metrics', {}).items():
+                print(f"  {metric}: {value:.4f}")
+        return
 
     if args.workflow and args.query:
         # 运行完整工作流

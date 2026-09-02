@@ -17,7 +17,7 @@ llm:
   local:
     model_path: null
     model_name: "Qwen/Qwen2.5-7B-Instruct"
-    device: "cuda"
+    device: "auto"
     load_in_8bit: false
 
 # Embedding Configuration
@@ -43,7 +43,7 @@ hybrid_retrieval:
   # BGE-Reranker 精排模型
   reranker_model: "BAAI/bge-reranker-v2-m3"
   # 设备配置
-  device: "cuda"
+  device: "auto"
   
   # 检索参数
   bm25_weight: 0.3  # BM25 权重

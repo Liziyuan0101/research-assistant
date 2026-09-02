@@ -2,7 +2,14 @@
 
 import pytest
 
-from research_assistant.utils.helpers import load_config, save_json, load_json, format_paper_info
+from research_assistant.utils.helpers import (
+    load_config,
+    save_json,
+    load_json,
+    format_paper_info,
+    resolve_env_placeholders,
+    resolve_device,
+)
 from research_assistant.utils.llm import resolve_api_key, create_openai_client
 
 
@@ -58,3 +65,22 @@ def test_create_openai_client_returns_none_without_key(monkeypatch):
     monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     assert create_openai_client({}) is None
+
+
+def test_resolve_env_placeholders_nested(monkeypatch):
+    monkeypatch.setenv("TEST_KEY", "secret-value")
+    data = {"a": "${TEST_KEY}", "b": [1, "${TEST_KEY}"], "c": {"d": "${MISSING_KEY}"}}
+    resolved = resolve_env_placeholders(data)
+    assert resolved["a"] == "secret-value"
+    assert resolved["b"] == [1, "secret-value"]
+    assert resolved["c"]["d"] == ""  # 未设置的变量解析为空字符串
+
+
+def test_resolve_device_passthrough():
+    assert resolve_device("cpu") == "cpu"
+    assert resolve_device("cuda") == "cuda"
+
+
+def test_resolve_device_auto_returns_valid():
+    result = resolve_device("auto")
+    assert result in ("cuda", "cpu")

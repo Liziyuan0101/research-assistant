@@ -3,6 +3,8 @@ Helper utilities
 """
 
 import json
+import os
+import re
 import yaml
 from pathlib import Path
 from typing import Dict, Any
@@ -84,5 +86,30 @@ def format_paper_info(paper: Dict) -> str:
     
     if 'abstract' in paper:
         lines.append(f"\nAbstract:\n{paper['abstract'][:500]}...")
-    
+
     return '\n'.join(lines)
+
+
+_ENV_PATTERN = re.compile(r'\$\{([A-Za-z_][A-Za-z0-9_]*)\}')
+
+
+def resolve_env_placeholders(obj):
+    """递归解析 ${VAR} 环境变量占位符(未设置的变量解析为空字符串)。"""
+    if isinstance(obj, str):
+        return _ENV_PATTERN.sub(lambda m: os.getenv(m.group(1), ''), obj)
+    if isinstance(obj, dict):
+        return {k: resolve_env_placeholders(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [resolve_env_placeholders(v) for v in obj]
+    return obj
+
+
+def resolve_device(device: str) -> str:
+    """解析设备名:auto -> cuda(若可用)否则 cpu;其余原样返回。"""
+    if device == 'auto':
+        try:
+            import torch
+            return 'cuda' if torch.cuda.is_available() else 'cpu'
+        except ImportError:
+            return 'cpu'
+    return device

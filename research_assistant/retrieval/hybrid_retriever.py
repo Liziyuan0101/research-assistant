@@ -32,6 +32,7 @@ from typing import List, Dict, Optional, Tuple, Any
 from dataclasses import dataclass, asdict
 from datetime import datetime
 import numpy as np
+from ..utils.helpers import resolve_device
 from tqdm import tqdm
 
 # FAISS
@@ -413,7 +414,7 @@ class HybridRetriever:
         # BGE-M3 模型配置
         self.bge_model_name = config.get('bge_model', 'BAAI/bge-m3')
         self.reranker_model_name = config.get('reranker_model', 'BAAI/bge-reranker-v2-m3')
-        self.device = config.get('device', 'cuda')
+        self.device = resolve_device(config.get('device', 'auto'))
         
         # 延迟加载模型
         self._bge_model = None
