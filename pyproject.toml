@@ -70,6 +70,10 @@ finetune = [
     "transformers>=4.35.0",
     "faiss-gpu>=1.7.4",
 ]
+# Development / testing
+dev = [
+    "pytest>=7.0",
+]
 
 [tool.setuptools.packages.find]
 include = ["research_assistant*"]
