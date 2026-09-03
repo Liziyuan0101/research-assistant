@@ -75,6 +75,11 @@ finetune = [
 dev = [
     "pytest>=7.0",
 ]
+# HTTP 服务
+serve = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+]
 
 [tool.setuptools.packages.find]
 include = ["research_assistant*"]
