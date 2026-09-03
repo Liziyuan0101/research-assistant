@@ -25,6 +25,7 @@ from .writing import AcademicWriter, CitationManager
 from .tools import CodeGenerator, DataAnalyzer, Visualizer
 from .utils.query_enhancer import QueryEnhancer
 from .utils.helpers import resolve_env_placeholders
+from .utils.llm import set_llm_cache
 
 # 可选导入
 try:
@@ -74,6 +75,9 @@ class ResearchAssistant:
 
         # 用户记忆(个性化:偏好 + 历史问答)
         self.memory = MemoryStore(str(_PROJECT_ROOT / 'data' / 'memory.db'))
+
+        # LLM 结果缓存(重复 query 不再重复调用 LLM)
+        set_llm_cache(str(_PROJECT_ROOT / 'data' / 'cache' / 'llm_cache.json'))
 
         # 论文检索模块（API搜索）
         self.paper_retriever = PaperRetriever(
