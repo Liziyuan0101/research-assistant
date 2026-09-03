@@ -733,6 +733,33 @@ def create_sample_eval_data(output_path: str, num_samples: int = 20):
     logger.info(f"📝 Created sample evaluation data with {len(samples)} samples at {output_path}")
 
 
+def evaluate_bm25_retrieval(corpus_path: str, eval_path: str, k_values=(1, 3, 5)) -> Dict:
+    """用 BM25 对真实语料做可复现检索评测(无网络、无 GPU)。
+
+    corpus_path: JSON 论文语料,每篇含 id/title/abstract。
+    eval_path: RetrievalEvaluator 格式的评测数据。
+    """
+    import re
+    from rank_bm25 import BM25Okapi
+
+    corpus = json.loads(Path(corpus_path).read_text(encoding='utf-8'))
+
+    class _BM25Retriever:
+        def __init__(self, papers):
+            self.paper_ids = [p['id'] for p in papers]
+            texts = [f"Title: {p['title']}\n\nAbstract: {p['abstract']}" for p in papers]
+            self.index = BM25Okapi([re.findall(r'\b\w+\b', t.lower()) for t in texts])
+
+        def search(self, query, top_k=5):
+            scores = self.index.get_scores(re.findall(r'\b\w+\b', query.lower()))
+            top = np.argsort(scores)[::-1][:top_k]
+            return [{'paper': {'paper_id': self.paper_ids[i]}, 'score': float(scores[i])}
+                    for i in top if scores[i] > 0]
+
+    evaluator = RetrievalEvaluator(eval_path)
+    return evaluator.evaluate_retriever(_BM25Retriever(corpus), k_values=list(k_values), verbose=False)
+
+
 if __name__ == "__main__":
     # 创建示例评测数据
     eval_data_path = Path(__file__).parent.parent.parent / 'data' / 'eval' / 'sample_eval_data.json'

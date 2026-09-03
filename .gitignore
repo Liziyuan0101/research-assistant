@@ -59,7 +59,8 @@ logs/
 output/
 outputs/
 results/
-data/
+data/*
+!data/eval/
 *.pkl
 *.pth
 *.h5

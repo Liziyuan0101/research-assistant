@@ -217,28 +217,22 @@ class ResearchAssistant:
         return papers
     
     def evaluate_retrieval(self, eval_data_path: Optional[str] = None, k_values: List[int] = None) -> Dict:
-        """运行检索评测并返回摘要。"""
-        from .retrieval.evaluation import create_sample_eval_data
+        """运行可复现的检索评测(BM25,真实语料)并返回摘要。"""
+        from .retrieval.evaluation import evaluate_bm25_retrieval
 
         if k_values is None:
             k_values = [1, 3, 5]
 
+        corpus_path = _PROJECT_ROOT / 'data' / 'eval' / 'corpus.json'
         if eval_data_path is None:
             eval_data_path = str(_PROJECT_ROOT / 'data' / 'eval' / 'retrieval_eval.json')
-        if not Path(eval_data_path).exists():
-            Path(eval_data_path).parent.mkdir(parents=True, exist_ok=True)
-            create_sample_eval_data(eval_data_path, num_samples=5)
 
-        evaluator = RetrievalEvaluator(eval_data_path)
-        if not evaluator.eval_samples:
-            logger.warning("⚠️ 无评测样本")
-            return {}
-        if self.hybrid_retriever is None:
-            logger.warning("⚠️ 混合检索器未初始化,跳过评测")
+        if not Path(corpus_path).exists() or not Path(eval_data_path).exists():
+            logger.warning("⚠️ 缺少评测语料或评测数据(data/eval/corpus.json + retrieval_eval.json)")
             return {}
 
         try:
-            return evaluator.evaluate_retriever(self.hybrid_retriever, k_values=k_values, verbose=False)
+            return evaluate_bm25_retrieval(str(corpus_path), eval_data_path, k_values=k_values)
         except Exception as e:
             logger.warning("⚠️ 评测失败: %s", e)
             return {}

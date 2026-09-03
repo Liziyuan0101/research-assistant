@@ -1,0 +1,50 @@
+{
+  "samples": [
+    {
+      "query_id": "q1",
+      "query": "remaining useful life prediction of lithium-ion batteries",
+      "relevant_paper_ids": [
+        "2305.10298",
+        "2308.03664",
+        "2310.18924",
+        "2505.16664",
+        "2603.27186",
+        "2403.05430"
+      ],
+      "source": "manual",
+      "difficulty": "medium"
+    },
+    {
+      "query_id": "q2",
+      "query": "state of health estimation of lithium-ion batteries",
+      "relevant_paper_ids": [
+        "2503.23858",
+        "1901.06000",
+        "2110.14033",
+        "1903.07672",
+        "2209.00190",
+        "2603.22323"
+      ],
+      "source": "manual",
+      "difficulty": "medium"
+    },
+    {
+      "query_id": "q3",
+      "query": "thermal dissipation analysis of lithium-ion batteries",
+      "relevant_paper_ids": [
+        "2502.07070"
+      ],
+      "source": "manual",
+      "difficulty": "easy"
+    },
+    {
+      "query_id": "q4",
+      "query": "federated learning for battery health monitoring",
+      "relevant_paper_ids": [
+        "2207.02337"
+      ],
+      "source": "manual",
+      "difficulty": "medium"
+    }
+  ]
+}

@@ -1,0 +1,338 @@
+[
+  {
+    "paper_id": "2502.07070v1",
+    "title": "Comprehensive Analysis of Thermal Dissipation in Lithium-Ion Battery Packs",
+    "authors": [
+      "Xuguang Zhang",
+      "Hexiang Zhang",
+      "Amjad Almansour",
+      "Mrityunjay Singh",
+      "Hengling Zhu",
+      "Michael C. Halbig",
+      "Yi Zheng"
+    ],
+    "abstract": "Effective thermal management is critical for lithium-ion battery packs' safe and efficient operations, particularly in applications such as drones, where compact designs and varying airflow conditions present unique challenges. This study investigates the thermal performance of a 16-cell lithium-ion battery pack by optimizing cooling airflow configurations and integrating phase change materials (PCMs) for enhanced heat dissipation. Seven geometric configurations were evaluated under airflow speeds ranging from 0 to 15 m/s, reflecting the operational conditions of civilian drones. A comprehensive 3D simulation approach was used to analyze the effects of inlet and outlet configurations, airflow dynamics, and PCM phase transition behavior. Results indicate that the trapezoidal (wide-base) configuration, paired with a 5-inlet and 1-outlet setup, achieves the most balanced performance, effectively maintaining optimal operating temperatures across low and high-speed airflow conditions. PCM integration further stabilized thermal behavior, with phase change durations extending to 12.5 min under tested conditions. These findings highlight the importance of geometric optimization and material integration in advancing compact and reliable thermal management systems for energy-dense battery packs. This study provides a foundation for designing efficient cooling strategies tailored to lightweight applications such as drones and portable energy storage systems.",
+    "published": "2025-02-10",
+    "source": "arxiv",
+    "id": "2502.07070"
+  },
+  {
+    "paper_id": "2305.10298v1",
+    "title": "Estimation of Remaining Useful Life and SOH of Lithium Ion Batteries (For EV Vehicles)",
+    "authors": [
+      "Ganesh Kumar"
+    ],
+    "abstract": "Lithium-ion batteries are widely used in various applications, including portable electronic devices, electric vehicles, and renewable energy storage systems. Accurately estimating the remaining useful life of these batteries is crucial for ensuring their optimal performance, preventing unexpected failures, and reducing maintenance costs. In this paper, we present a comprehensive review of the existing approaches for estimating the remaining useful life of lithium-ion batteries, including data-driven methods, physics-based models, and hybrid approaches. We also propose a novel approach based on machine learning techniques for accurately predicting the remaining useful life of lithium-ion batteries. Our approach utilizes various battery performance parameters, including voltage, current, and temperature, to train a predictive model that can accurately estimate the remaining useful life of the battery. We evaluate the performance of our approach on a dataset of lithium-ion battery cycles and compare it with other state-of-the-art methods. The results demonstrate the effectiveness of our proposed approach in accurately estimating the remaining useful life of lithium-ion batteries.",
+    "published": "2023-05-17",
+    "source": "arxiv",
+    "id": "2305.10298"
+  },
+  {
+    "paper_id": "2308.03664v1",
+    "title": "Two-stage Early Prediction Framework of Remaining Useful Life for Lithium-ion Batteries",
+    "authors": [
+      "Dhruv Mittal",
+      "Hymalai Bello",
+      "Bo Zhou",
+      "Mayank Shekhar Jha",
+      "Sungho Suh",
+      "Paul Lukowicz"
+    ],
+    "abstract": "Early prediction of remaining useful life (RUL) is crucial for effective battery management across various industries, ranging from household appliances to large-scale applications. Accurate RUL prediction improves the reliability and maintainability of battery technology. However, existing methods have limitations, including assumptions of data from the same sensors or distribution, foreknowledge of the end of life (EOL), and neglect to determine the first prediction cycle (FPC) to identify the start of the unhealthy stage. This paper proposes a novel method for RUL prediction of Lithium-ion batteries. The proposed framework comprises two stages: determining the FPC using a neural network-based model to divide the degradation data into distinct health states and predicting the degradation pattern after the FPC to estimate the remaining useful life as a percentage. Experimental results demonstrate that the proposed method outperforms conventional approaches in terms of RUL prediction. Furthermore, the proposed method shows promise for real-world scenarios, providing improved accuracy and applicability for battery management.",
+    "published": "2023-08-07",
+    "source": "arxiv",
+    "id": "2308.03664"
+  },
+  {
+    "paper_id": "2310.18924v2",
+    "title": "Remaining useful life prediction of Lithium-ion batteries using spatio-temporal multimodal attention networks",
+    "authors": [
+      "Sungho Suh",
+      "Dhruv Aditya Mittal",
+      "Hymalai Bello",
+      "Bo Zhou",
+      "Mayank Shekhar Jha",
+      "Paul Lukowicz"
+    ],
+    "abstract": "Lithium-ion batteries are widely used in various applications, including electric vehicles and renewable energy storage. The prediction of the remaining useful life (RUL) of batteries is crucial for ensuring reliable and efficient operation, as well as reducing maintenance costs. However, determining the life cycle of batteries in real-world scenarios is challenging, and existing methods have limitations in predicting the number of cycles iteratively. In addition, existing works often oversimplify the datasets, neglecting important features of the batteries such as temperature, internal resistance, and material type. To address these limitations, this paper proposes a two-stage RUL prediction scheme for Lithium-ion batteries using a spatio-temporal multimodal attention network (ST-MAN). The proposed ST-MAN is to capture the complex spatio-temporal dependencies in the battery data, including the features that are often neglected in existing works. Despite operating without prior knowledge of end-of-life (EOL) events, our method consistently achieves lower error rates, boasting mean absolute error (MAE) and mean square error (MSE) of 0.0275 and 0.0014, respectively, compared to existing convolutional neural networks (CNN) and long short-term memory (LSTM)-based methods. The proposed method has the potential to improve the reliability and efficiency of battery operations and is applicable in various industries.",
+    "published": "2023-10-29",
+    "source": "arxiv",
+    "id": "2310.18924"
+  },
+  {
+    "paper_id": "2505.16664v3",
+    "title": "HyBattNet: Hybrid Framework for Predicting the Remaining Useful Life of Lithium-Ion Batteries",
+    "authors": [
+      "Khoa Tran",
+      "Tri Le",
+      "Bao Huynh",
+      "Hung-Cuong Trinh",
+      "Vy-Rin Nguyen",
+      "T. Nguyen-Thoi",
+      "Vin Nguyen-Thai"
+    ],
+    "abstract": "Accurate prediction of the Remaining Useful Life (RUL) is essential for enabling timely maintenance of lithium-ion batteries, impacting the operational efficiency of electric applications that rely on them. This paper proposes a RUL prediction approach that leverages data from recent charge-discharge cycles to estimate the number of remaining usable cycles. The approach introduces both a novel signal preprocessing pipeline and a deep learning prediction model. In the signal preprocessing pipeline, a derived capacity feature is computed using interpolated current and capacity signals. Alongside original capacity, voltage and current, these features are denoised and enhanced using statistical metrics and a delta-based method to capture differences between the current and previous cycles. In the prediction model, the processed features are then fed into a hybrid deep learning architecture composed of 1D Convolutional Neural Networks (CNN), Attentional Long Short-Term Memory (A-LSTM), and Ordinary Differential Equation-based LSTM (ODE-LSTM) blocks. The ODE-LSTM architecture employs ordinary differential equations to integrate continuous dynamics into sequence-to-sequence modeling, thereby combining continuous and discrete temporal representations, while the A-LSTM incorporates an attention mechanism to capture local temporal dependencies. The model is further evaluated using transfer learning across different learning strategies and target data partitioning scenarios. Results indicate that the model maintains robust performance, even when fine-tuned on limited target data. Experimental results on two publicly available LFP/graphite lithium-ion battery datasets demonstrate that the proposed method outperforms a baseline deep learning approach and machine learning techniques, achieving an RMSE of 101.59, highlighting its potential for real-world RUL prediction applications.",
+    "published": "2025-05-22",
+    "source": "arxiv",
+    "id": "2505.16664"
+  },
+  {
+    "paper_id": "2603.27186v1",
+    "title": "Hybrid Deep Learning with Temporal Data Augmentation for Accurate Remaining Useful Life Prediction of Lithium-Ion Batteries",
+    "authors": [
+      "Yun Tian",
+      "Guili Wang",
+      "Jian Bi",
+      "Kaixin Han",
+      "Chenglu Wu",
+      "Zhiyi Lu",
+      "Chenhao Li",
+      "Liangwang Sun",
+      "Minyu Zhou",
+      "Chenchen Xu"
+    ],
+    "abstract": "Accurate prediction of lithium-ion battery remaining useful life (RUL) is essential for reliable health monitoring and data-driven analysis of battery degradation. However, the robustness and generalization capabilities of existing RUL prediction models are significantly challenged by complex operating conditions and limited data availability. To address these limitations, this study proposes a hybrid deep learning model, CDFormer, which integrates convolutional neural networks, deep residual shrinkage networks, and Transformer encoders extract multiscale temporal features from battery measurement signals, including voltage, current, and capacity. This architecture enables the joint modeling of local and global degradation dynamics, effectively improving the accuracy of RUL prediction.To enhance predictive reliability, a composite temporal data augmentation strategy is proposed, incorporating Gaussian noise, time warping, and time resampling, explicitly accounting for measurement noise and variability. CDFormer is evaluated on two real-world datasets, with experimental results demonstrating its consistent superiority over conventional recurrent neural network-based and Transformer-based baselines across key metrics. By improving the reliability and predictive performance of RUL prediction from measurement data, CDFormer provides accurate and reliable forecasts, supporting effective battery health monitoring and data-driven maintenance strategies.",
+    "published": "2026-03-28",
+    "source": "arxiv",
+    "id": "2603.27186"
+  },
+  {
+    "paper_id": "2201.04891v3",
+    "title": "Large Interferometer For Exoplanets (LIFE): IV. Ideal kernel-nulling array architectures for a space-based mid-infrared nulling interferometer",
+    "authors": [
+      "Jonah T. Hansen",
+      "Michael J. Ireland",
+      "the LIFE Collaboration"
+    ],
+    "abstract": "Aims: Optical interferometry from space for the purpose of detecting and characterising exoplanets is seeing a revival, specifically from missions such as the proposed Large Interferometer For Exoplanets (LIFE). A default assumption since the design studies of Darwin and TPF-I has been that the Emma X-array configuration is the optimal architecture for this goal. Here, we examine whether new advances in the field of nulling interferometry, such as the concept of kernel nulling, challenge this assumption.\n  Methods: We develop a tool designed to derive the photon-limited signal to noise ratio of a large sample of simulated planets for different architecture configurations and beam combination schemes. We simulate four basic configurations: the double Bracewell/X-array, and kernel nullers with three, four and five telescopes respectively.\n  Results: We find that a configuration of five telescopes in a pentagonal shape, using a five aperture kernel nulling scheme, outperforms the X-array design in both search (finding more planets) and characterisation (obtaining better signal, faster) when total collecting area is conserved. This is especially the case when trying to detect Earth twins (temperate, rocky planets in the habitable zone), showing a 23% yield increase over the X-array. On average, we find that a five telescope design receives 1.2 times the signal over the X-array design.\n  Conclusions: With the results of this simulation, we conclude that the Emma X-array configuration may not be the best architecture choice for the upcoming LIFE mission, and that a five telescope design utilising kernel nulling concepts will likely provide better scientific return for the same collecting area, provided that technical solutions for the required achromatic phase shifts can be implemented.",
+    "published": "2022-01-13",
+    "source": "arxiv",
+    "id": "2201.04891"
+  },
+  {
+    "paper_id": "2603.22323v1",
+    "title": "A Multi-Task Targeted Learning Framework for Lithium-Ion Battery State-of-Health and Remaining Useful Life",
+    "authors": [
+      "Chenhan Wang",
+      "Zhengyi Bao",
+      "Huipin Lin",
+      "Jiahao Nie",
+      "Chunxiang Zhu"
+    ],
+    "abstract": "Accurately predicting the state-of-health (SOH) and remaining useful life (RUL) of lithium-ion batteries is crucial for ensuring the safe and efficient operation of electric vehicles while minimizing associated risks. However, current deep learning methods are limited in their ability to selectively extract features and model time dependencies for these two parameters. Moreover, most existing methods rely on traditional recurrent neural networks, which have inherent shortcomings in long-term time-series modeling. To address these issues, this paper proposes a multi-task targeted learning framework for SOH and RUL prediction, which integrates multiple neural networks, including a multi-scale feature extraction module, an improved extended LSTM, and a dual-stream attention module. First, a feature extraction module with multi-scale CNNs is designed to capture detailed local battery decline patterns. Secondly, an improved extended LSTM network is employed to enhance the model's ability to retain long-term temporal information, thus improving temporal relationship modeling. Building on this, the dual-stream attention module-comprising polarized attention and sparse attention to selectively focus on key information relevant to SOH and RUL, respectively, by assigning higher weights to important features. Finally, a many-to-two mapping is achieved through the dual-task layer. To optimize the model's performance and reduce the need for manual hyperparameter tuning, the Hyperopt optimization algorithm is used. Extensive comparative experiments on battery aging datasets demonstrate that the proposed method reduces the average RMSE for SOH and RUL predictions by 111.3\\% and 33.0\\%, respectively, compared to traditional and state-of-the-art methods.",
+    "published": "2026-03-20",
+    "source": "arxiv",
+    "id": "2603.22323"
+  },
+  {
+    "paper_id": "2403.05430v1",
+    "title": "MambaLithium: Selective state space model for remaining-useful-life, state-of-health, and state-of-charge estimation of lithium-ion batteries",
+    "authors": [
+      "Zhuangwei Shi"
+    ],
+    "abstract": "Recently, lithium-ion batteries occupy a pivotal position in the realm of electric vehicles and the burgeoning new energy industry. Their performance is heavily dependent on three core states: remaining-useful-life (RUL), state-of-health (SOH), and state-of-charge (SOC). Given the remarkable success of Mamba (Structured state space sequence models with selection mechanism and scan module, S6) in sequence modeling tasks, this paper introduces MambaLithium, a selective state space model tailored for precise estimation of these critical battery states. Leveraging Mamba algorithms, MambaLithium adeptly captures the intricate aging and charging dynamics of lithium-ion batteries. By focusing on pivotal states within the battery's operational envelope, MambaLithium not only enhances estimation accuracy but also maintains computational robustness. Experiments conducted using real-world battery data have validated the model's superiority in predicting battery health and performance metrics, surpassing current methods. The proposed MambaLithium framework is potential for applications in advancing battery management systems and fostering sustainable energy storage solutions. Source code is available at https://github.com/zshicode/MambaLithium.",
+    "published": "2024-03-08",
+    "source": "arxiv",
+    "id": "2403.05430"
+  },
+  {
+    "paper_id": "2503.23858v1",
+    "title": "Incremental capacity-based multi-feature fusion model for predicting state-of-health of lithium-ion batteries",
+    "authors": [
+      "Chenyu Jia",
+      "Guangshu Xia",
+      "Yuanhao Shi",
+      "Jianfang Jia",
+      "Jie Wen",
+      "Jianchao Zeng"
+    ],
+    "abstract": "Lithium-ion batteries have become an indispensable part of human industrial production and daily life. For the safe use, management and maintenance of lithium-ion batteries, the state of health (SOH) of lithium-ion batteries is an important indicator so that the SOH estimation is of significant practical value. In order to accurately predict SOH, this paper proposes a fusion prediction model which combines particle swarm optimization (PSO) algorithm, bi-directional long-short time memory network (BiLSTM) and adaptive boosting (AdaBoost) algorithm. In the proposed prediction model, indirect health indicators (HIs), which characterize battery degradation, are obtained with the help of incremental capacity analysis (ICA), and is fed into BiLSTM to extract time-series features, whose parameters are optimized by employing PSO algorithm. On this basis, the AdaBoost algorithm is applied to reduce the risk of overfitting the PSO-BiLSTM model. The study based on lithium-ion battery data from Center for Advanced Life Cycle Engineering (CALCE) shows that the PSO-BiLSTM-AdaBoost model has higher accuracy, better robustness, and generalization ability.",
+    "published": "2025-03-31",
+    "source": "arxiv",
+    "id": "2503.23858"
+  },
+  {
+    "paper_id": "1901.06000v2",
+    "title": "The Sequential Algorithm for Combined State of Charge and State of Health Estimation of Lithium Ion Battery based on Active Current Injection",
+    "authors": [
+      "Ziyou Song",
+      "Jun Hou",
+      "Xuefeng Li",
+      "Xiaogang Wu",
+      "Xiaosong Hu",
+      "Heath Hofmann",
+      "Jing Sun"
+    ],
+    "abstract": "When State of Charge, State of Health, and parameters of the Lithium-ion battery are estimated simultaneously, the estimation accuracy is hard to be ensured due to uncertainties in the estimation process. To improve the estimation performance a sequential algorithm, which uses frequency scale separation and estimates parameters/states sequentially by injecting currents with different frequencies, is proposed in this paper. Specifically, by incorporating a high-pass filter, the parameters can be independently characterized by injecting high-frequency and medium-frequency currents, respectively. Using the estimated parameters, battery capacity and State of Charge can then be estimated concurrently. Experimental results show that the estimation accuracy of the proposed sequential algorithm is much better than the concurrent algorithm where all parameters/states are estimated simultaneously, and the computational cost can also be reduced. Finally, experiments are conducted under different temperatures to verify the effectiveness of the proposed algorithm for various battery capacities.",
+    "published": "2019-01-15",
+    "source": "arxiv",
+    "id": "1901.06000"
+  },
+  {
+    "paper_id": "2110.14033v1",
+    "title": "Noninvasive ultrasound for Lithium-ion batteries state estimation",
+    "authors": [
+      "Simon Montoya-Bedoya",
+      "Miguel Bernal",
+      "Laura A. Sabogal-Moncada",
+      "Hader V. Martinez-Tejada",
+      "Esteban Garcia-Tamayo"
+    ],
+    "abstract": "Lithium-ion battery degradation estimation using fast and noninvasive techniques is a crucial issue in the circular economy framework of this technology. Currently, most of the approaches used to establish the battery-state (i.e., State of Charge (SoC), State of Health (SoH)) require time-consuming processes. In the present preliminary study, an ultrasound array was used to assess the influence of the SoC and SoH on the variations in the time of flight (TOF) and the speed of sound (SOS) of the ultrasound wave inside the batteries. Nine aged 18650 Lithium-ion batteries were imaged at 100% and 0% SoC using a Vantage-256 system (Verasonics, Inc.) equipped with a 64-element ultrasound array and a center frequency of 5 MHz (Imasonic SAS). It was found that second-life batteries have a complex ultrasound response due to the presence of many degradation pathways and, thus, making it harder to analyze the ultrasound measurements. Although further analysis must be done to elucidate a clear correlation between changes in the ultrasound wave properties and the battery state estimation, this approach seems very promising for future nondestructive evaluation of second-life batteries.",
+    "published": "2021-10-26",
+    "source": "arxiv",
+    "id": "2110.14033"
+  },
+  {
+    "paper_id": "1903.07672v2",
+    "title": "State of health estimation for lithium-ion battery by combining incremental capacity analysis with Gaussian process regression",
+    "authors": [
+      "Xiaoyu Li",
+      "Zhenpo Wang"
+    ],
+    "abstract": "The state of health for lithium battery is necessary to ensure the reliability and safety for battery energy storage system. Accurate prediction battery state of health plays an extremely important role in guaranteeing safety and minimizing the maintenance costs. However, the complex physicochemical characteristics of battery degradation cannot be obtained directly. Here a novel Gaussian process regression model based on partial incremental capacity curve is proposed. First, an advanced Gaussian filter method is applied to obtain the smoothing incremental capacity curves. The health indexes are then extracted from the partial incremental capacity curves as the input features of the proposed model. Otherwise, the mean and the covariance function of the proposed method are applied to predict battery state of health and the model uncertainty, respectively. Four aging datasets from NASA data repository are employed for demonstrating the predictive capability and efficacy of the degradation model using the proposed method. Besides, different initial health conditions of the tested batteries are used to verify the robustness and reliability of the proposed method. Results show that the proposed method can provide accurate and robust state of health estimation.",
+    "published": "2019-03-15",
+    "source": "arxiv",
+    "id": "1903.07672"
+  },
+  {
+    "paper_id": "2209.00190v1",
+    "title": "A Transferable Multi-stage Model with Cycling Discrepancy Learning for Lithium-ion Battery State of Health Estimation",
+    "authors": [
+      "Yan Qin",
+      "Chau Yuen",
+      "Xunyuan Yin",
+      "Biao Huang"
+    ],
+    "abstract": "As a significant ingredient regarding health status, data-driven state-of-health (SOH) estimation has become dominant for lithium-ion batteries (LiBs). To handle data discrepancy across batteries, current SOH estimation models engage in transfer learning (TL), which reserves apriori knowledge gained through reusing partial structures of the offline trained model. However, multiple degradation patterns of a complete life cycle of a battery make it challenging to pursue TL. The concept of the stage is introduced to describe the collection of continuous cycles that present a similar degradation pattern. A transferable multi-stage SOH estimation model is proposed to perform TL across batteries in the same stage, consisting of four steps. First, with identified stage information, raw cycling data from the source battery are reconstructed into the phase space with high dimensions, exploring hidden dynamics with limited sensors. Next, domain invariant representation across cycles in each stage is proposed through cycling discrepancy subspace with reconstructed data. Third, considering the unbalanced discharge cycles among different stages, a switching estimation strategy composed of a lightweight model with the long short-term memory network and a powerful model with the proposed temporal capsule network is proposed to boost estimation accuracy. Lastly, an updating scheme compensates for estimation errors when the cycling consistency of target batteries drifts. The proposed method outperforms its competitive algorithms in various transfer tasks for a run-to-failure benchmark with three batteries.",
+    "published": "2022-09-01",
+    "source": "arxiv",
+    "id": "2209.00190"
+  },
+  {
+    "paper_id": "1609.04846v1",
+    "title": "A Tutorial about Random Neural Networks in Supervised Learning",
+    "authors": [
+      "Sebastián Basterrech",
+      "Gerardo Rubino"
+    ],
+    "abstract": "Random Neural Networks (RNNs) are a class of Neural Networks (NNs) that can also be seen as a specific type of queuing network. They have been successfully used in several domains during the last 25 years, as queuing networks to analyze the performance of resource sharing in many engineering areas, as learning tools and in combinatorial optimization, where they are seen as neural systems, and also as models of neurological aspects of living beings. In this article we focus on their learning capabilities, and more specifically, we present a practical guide for using the RNN to solve supervised learning problems. We give a general description of these models using almost indistinctly the terminology of Queuing Theory and the neural one. We present the standard learning procedures used by RNNs, adapted from similar well-established improvements in the standard NN field. We describe in particular a set of learning algorithms covering techniques based on the use of first order and, then, of second order derivatives. We also discuss some issues related to these objects and present new perspectives about their use in supervised learning problems. The tutorial describes their most relevant applications, and also provides a large bibliography.",
+    "published": "2016-09-15",
+    "source": "arxiv",
+    "id": "1609.04846"
+  },
+  {
+    "paper_id": "1909.10086v3",
+    "title": "Learning Universal Graph Neural Network Embeddings With Aid Of Transfer Learning",
+    "authors": [
+      "Saurabh Verma",
+      "Zhi-Li Zhang"
+    ],
+    "abstract": "Learning powerful data embeddings has become a center piece in machine learning, especially in natural language processing and computer vision domains. The crux of these embeddings is that they are pretrained on huge corpus of data in a unsupervised fashion, sometimes aided with transfer learning. However currently in the graph learning domain, embeddings learned through existing graph neural networks (GNNs) are task dependent and thus cannot be shared across different datasets. In this paper, we present a first powerful and theoretically guaranteed graph neural network that is designed to learn task-independent graph embeddings, thereafter referred to as deep universal graph embedding (DUGNN). Our DUGNN model incorporates a novel graph neural network (as a universal graph encoder) and leverages rich Graph Kernels (as a multi-task graph decoder) for both unsupervised learning and (task-specific) adaptive supervised learning. By learning task-independent graph embeddings across diverse datasets, DUGNN also reaps the benefits of transfer learning. Through extensive experiments and ablation studies, we show that the proposed DUGNN model consistently outperforms both the existing state-of-art GNN models and Graph Kernels by an increased accuracy of 3% - 8% on graph classification benchmark datasets.",
+    "published": "2019-09-22",
+    "source": "arxiv",
+    "id": "1909.10086"
+  },
+  {
+    "paper_id": "1803.02421v2",
+    "title": "Masked Conditional Neural Networks for Audio Classification",
+    "authors": [
+      "Fady Medhat",
+      "David Chesmore",
+      "John Robinson"
+    ],
+    "abstract": "We present the ConditionaL Neural Network (CLNN) and the Masked ConditionaL Neural Network (MCLNN) designed for temporal signal recognition. The CLNN takes into consideration the temporal nature of the sound signal and the MCLNN extends upon the CLNN through a binary mask to preserve the spatial locality of the features and allows an automated exploration of the features combination analogous to hand-crafting the most relevant features for the recognition task. MCLNN has achieved competitive recognition accuracies on the GTZAN and the ISMIR2004 music datasets that surpass several state-of-the-art neural network based architectures and hand-crafted methods applied on both datasets.",
+    "published": "2018-03-06",
+    "source": "arxiv",
+    "id": "1803.02421"
+  },
+  {
+    "paper_id": "2306.14753v1",
+    "title": "The Deep Arbitrary Polynomial Chaos Neural Network or how Deep Artificial Neural Networks could benefit from Data-Driven Homogeneous Chaos Theory",
+    "authors": [
+      "Sergey Oladyshkin",
+      "Timothy Praditia",
+      "Ilja Kröker",
+      "Farid Mohammadi",
+      "Wolfgang Nowak",
+      "Sebastian Otte"
+    ],
+    "abstract": "Artificial Intelligence and Machine learning have been widely used in various fields of mathematical computing, physical modeling, computational science, communication science, and stochastic analysis. Approaches based on Deep Artificial Neural Networks (DANN) are very popular in our days. Depending on the learning task, the exact form of DANNs is determined via their multi-layer architecture, activation functions and the so-called loss function. However, for a majority of deep learning approaches based on DANNs, the kernel structure of neural signal processing remains the same, where the node response is encoded as a linear superposition of neural activity, while the non-linearity is triggered by the activation functions. In the current paper, we suggest to analyze the neural signal processing in DANNs from the point of view of homogeneous chaos theory as known from polynomial chaos expansion (PCE). From the PCE perspective, the (linear) response on each node of a DANN could be seen as a $1^{st}$ degree multi-variate polynomial of single neurons from the previous layer, i.e. linear weighted sum of monomials. From this point of view, the conventional DANN structure relies implicitly (but erroneously) on a Gaussian distribution of neural signals. Additionally, this view revels that by design DANNs do not necessarily fulfill any orthogonality or orthonormality condition for a majority of data-driven applications. Therefore, the prevailing handling of neural signals in DANNs could lead to redundant representation as any neural signal could contain some partial information from other neural signals. To tackle that challenge, we suggest to employ the data-driven generalization of PCE theory known as arbitrary polynomial chaos (aPC) to construct a corresponding multi-variate orthonormal representations on each node of a DANN to obtain Deep arbitrary polynomial chaos neural networks.",
+    "published": "2023-06-26",
+    "source": "arxiv",
+    "id": "2306.14753"
+  },
+  {
+    "paper_id": "2406.00552v4",
+    "title": "Graph Neural Network Training Systems: A Performance Comparison of Full-Graph and Mini-Batch",
+    "authors": [
+      "Saurabh Bajaj",
+      "Hojae Son",
+      "Juelin Liu",
+      "Hui Guan",
+      "Marco Serafini"
+    ],
+    "abstract": "Graph Neural Networks (GNNs) have gained significant attention in recent years due to their ability to learn representations of graph-structured data. Two common methods for training GNNs are mini-batch training and full-graph training. Since these two methods require different training pipelines and systems optimizations, two separate classes of GNN training systems emerged, each tailored for one method. Works that introduce systems belonging to a particular category predominantly compare them with other systems within the same category, offering limited or no comparison with systems from the other category. Some prior work also justifies its focus on one specific training method by arguing that it achieves higher accuracy than the alternative. The literature, however, has incomplete and contradictory evidence in this regard.\n  In this paper, we provide a comprehensive empirical comparison of representative full-graph and mini-batch GNN training systems. We find that the mini-batch training systems consistently converge faster than the full-graph training ones across multiple datasets, GNN models, and system configurations. We also find that mini-batch training techniques converge to similar to or often higher accuracy values than full-graph training ones, showing that mini-batch sampling is not necessarily detrimental to accuracy. Our work highlights the importance of comparing systems across different classes, using time-to-accuracy rather than epoch time for performance comparison, and selecting appropriate hyperparameters for each training method separately.",
+    "published": "2024-06-01",
+    "source": "arxiv",
+    "id": "2406.00552"
+  },
+  {
+    "paper_id": "2207.02337v1",
+    "title": "Federated and Transfer Learning: A Survey on Adversaries and Defense Mechanisms",
+    "authors": [
+      "Ehsan Hallaji",
+      "Roozbeh Razavi-Far",
+      "Mehrdad Saif"
+    ],
+    "abstract": "The advent of federated learning has facilitated large-scale data exchange amongst machine learning models while maintaining privacy. Despite its brief history, federated learning is rapidly evolving to make wider use more practical. One of the most significant advancements in this domain is the incorporation of transfer learning into federated learning, which overcomes fundamental constraints of primary federated learning, particularly in terms of security. This chapter performs a comprehensive survey on the intersection of federated and transfer learning from a security point of view. The main goal of this study is to uncover potential vulnerabilities and defense mechanisms that might compromise the privacy and performance of systems that use federated and transfer learning.",
+    "published": "2022-07-05",
+    "source": "arxiv",
+    "id": "2207.02337"
+  },
+  {
+    "paper_id": "2007.06081v1",
+    "title": "VAFL: a Method of Vertical Asynchronous Federated Learning",
+    "authors": [
+      "Tianyi Chen",
+      "Xiao Jin",
+      "Yuejiao Sun",
+      "Wotao Yin"
+    ],
+    "abstract": "Horizontal Federated learning (FL) handles multi-client data that share the same set of features, and vertical FL trains a better predictor that combine all the features from different clients. This paper targets solving vertical FL in an asynchronous fashion, and develops a simple FL method. The new method allows each client to run stochastic gradient algorithms without coordination with other clients, so it is suitable for intermittent connectivity of clients. This method further uses a new technique of perturbed local embedding to ensure data privacy and improve communication efficiency. Theoretically, we present the convergence rate and privacy level of our method for strongly convex, nonconvex and even nonsmooth objectives separately. Empirically, we apply our method to FL on various image and healthcare datasets. The results compare favorably to centralized and synchronous FL methods.",
+    "published": "2020-07-12",
+    "source": "arxiv",
+    "id": "2007.06081"
+  },
+  {
+    "paper_id": "1910.04956v2",
+    "title": "Central Server Free Federated Learning over Single-sided Trust Social Networks",
+    "authors": [
+      "Chaoyang He",
+      "Conghui Tan",
+      "Hanlin Tang",
+      "Shuang Qiu",
+      "Ji Liu"
+    ],
+    "abstract": "Federated learning has become increasingly important for modern machine learning, especially for data privacy-sensitive scenarios. Existing federated learning mostly adopts the central server-based architecture or centralized architecture. However, in many social network scenarios, centralized federated learning is not applicable (e.g., a central agent or server connecting all users may not exist, or the communication cost to the central server is not affordable). In this paper, we consider a generic setting: 1) the central server may not exist, and 2) the social network is unidirectional or of single-sided trust (i.e., user A trusts user B but user B may not trust user A). We propose a central server free federated learning algorithm, named Online Push-Sum (OPS) method, to handle this challenging but generic scenario. A rigorous regret analysis is also provided, which shows very interesting results on how users can benefit from communication with trusted users in the federated learning scenario. This work builds upon the fundamental algorithm framework and theoretical guarantees for federated learning in the generic social network scenario.",
+    "published": "2019-10-11",
+    "source": "arxiv",
+    "id": "1910.04956"
+  },
+  {
+    "paper_id": "2608.08906v1",
+    "title": "Federated Attention Autoencoders with a Stochastic Aggregation Scheme for Anomaly Detection",
+    "authors": [
+      "Mihailo Ilić",
+      "Miloš Savić",
+      "Vladimir Kurbalija",
+      "Mirjana Ivanović",
+      "Giancarlo Fortino",
+      "Dušan Jakovetić"
+    ],
+    "abstract": "Outlier detection in decentralized data environments is a challenging task for many machine learning implementations, particularly in settings where data cannot be shared. Recently, there have been advances in federated outlier detection, some of which are based on the use of autoencoder networks. The introduction of attention mechanisms to autoencoders boosts their efficiency. However, the application of attention-based models in federated learning remains underdeveloped due to the absence of proper aggregation functions for these types of networks. In our work, we propose two novel aggregation functions tailored for attention-based autoencoders, which better preserve the learned information stored within the memory modules of these networks. We evaluated our approach on the KDDCUP10 dataset, and we showed that the proposed methods achieve up to 2.9\\% and 5.1\\% better results for F1 score and AUC ROC respectively when compared to traditional autoencoders.",
+    "published": "2026-08-09",
+    "source": "arxiv",
+    "id": "2608.08906"
+  }
+]
