@@ -54,6 +54,7 @@ from .tools import (
     CitationTool,
     ToolResult
 )
+from ..retrieval.memory import format_preferences
 
 
 class AgentType(Enum):
@@ -360,16 +361,20 @@ class ResearchAgentGraph:
     使用 LangGraph 构建多Agent协作流程
     """
     
-    def __init__(self, config: Dict, retriever=None):
+    def __init__(self, config: Dict, retriever=None, memory=None, user_id: str = "default"):
         """
         初始化
-        
+
         Args:
             config: 配置字典
             retriever: HybridRetriever 实例
+            memory: MemoryStore 实例(可选,用于个性化记忆)
+            user_id: 用户标识
         """
         self.config = config
         self.retriever = retriever
+        self.memory = memory
+        self.user_id = user_id
         
         # 初始化LLM
         llm_config = config.get('llm', {})
@@ -680,6 +685,12 @@ class ResearchAgentGraph:
         Returns:
             执行结果
         """
+        # 个性化:注入用户科研偏好(软个性化)
+        if self.memory:
+            pref_text = format_preferences(self.memory.get_preferences(self.user_id))
+            if pref_text:
+                task = f"{pref_text}\n用户任务: {task}"
+
         # 初始状态
         initial_state: AgentState = {
             'messages': [HumanMessage(content=task)],
@@ -695,12 +706,12 @@ class ResearchAgentGraph:
             'final_output': None,
             'error': None
         }
-        
+
         if self.graph:
             # 使用LangGraph执行
             try:
                 final_state = self.graph.invoke(initial_state)
-                return {
+                result = {
                     'success': True,
                     'task': task,
                     'task_type': final_state.get('task_type'),
@@ -711,14 +722,21 @@ class ResearchAgentGraph:
                     'tool_outputs': final_state.get('tool_outputs', [])
                 }
             except Exception as e:
-                return {
+                result = {
                     'success': False,
                     'task': task,
                     'error': str(e)
                 }
         else:
             # 降级：直接调用单个Agent
-            return self._fallback_run(task)
+            result = self._fallback_run(task)
+
+        # 记录问答到长期记忆
+        if self.memory:
+            answer = result.get('final_output') or result.get('error', '')
+            self.memory.add_qa(self.user_id, task, str(answer), success=result.get('success', False))
+
+        return result
     
     def _fallback_run(self, task: str) -> Dict:
         """降级执行（不使用LangGraph）"""

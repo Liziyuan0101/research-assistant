@@ -107,7 +107,7 @@ class ResearchAssistant:
                     'output_dir': self.config.get('multi_agent', {}).get('output_dir', 'output/agent_outputs'),
                     'citation_style': self.config.get('multi_agent', {}).get('citation_style', 'ieee')
                 }
-                self.agent_graph = ResearchAgentGraph(agent_config, self.hybrid_retriever)
+                self.agent_graph = ResearchAgentGraph(agent_config, self.hybrid_retriever, memory=self.memory, user_id=self.user_id)
             except Exception as e:
                 self.agent_graph = None
         else:
