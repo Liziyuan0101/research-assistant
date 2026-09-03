@@ -10,7 +10,7 @@ from typing import Dict, List, Optional
 from pathlib import Path
 import json
 
-from ..utils.llm import create_openai_client
+from ..utils.llm import create_openai_client, chat_completion
 from .memory import format_preferences
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,7 @@ class PaperInterpreter:
         )
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {"role": "system", "content": self._system_prompt()},
@@ -105,7 +105,7 @@ class PaperInterpreter:
         prompt = prompt_template.format(content=content)
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {"role": "system", "content": self._system_prompt()},
@@ -136,7 +136,7 @@ class PaperInterpreter:
         prompt = prompt_template.format(content=content)
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {"role": "system", "content": self._system_prompt()},
@@ -212,7 +212,7 @@ class PaperInterpreter:
         prompt = prompt_template.format(papers_to_compare='\n---\n'.join(papers_text))
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {"role": "system", "content": self._system_prompt()},
@@ -247,7 +247,7 @@ class PaperInterpreter:
         prompt = prompt_template.format(papers_list='\n'.join(papers_text))
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "你是一位专业的学术论文分析专家，擅长撰写文献综述。"},

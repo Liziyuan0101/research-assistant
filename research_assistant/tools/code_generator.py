@@ -7,7 +7,7 @@ import os
 from typing import Dict, Optional, List
 from pathlib import Path
 
-from ..utils.llm import create_openai_client
+from ..utils.llm import create_openai_client, chat_completion
 
 
 import logging
@@ -67,7 +67,7 @@ class CodeGenerator:
             return self._template_training_code(model_type, framework)
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {
@@ -121,7 +121,7 @@ class CodeGenerator:
             return self._template_evaluation_code(metrics, framework)
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {
@@ -174,7 +174,7 @@ class CodeGenerator:
             return self._template_preprocessing_code()
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {

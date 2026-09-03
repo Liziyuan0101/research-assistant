@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Any
 from pathlib import Path
 import yaml
 
-from ..utils.llm import create_openai_client
+from ..utils.llm import create_openai_client, chat_completion
 
 
 import logging
@@ -69,7 +69,7 @@ class ExperimentPlanner:
             return self._fallback_plan(research_question)
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.planning_model,
                 messages=[
                     {
@@ -135,7 +135,7 @@ class ExperimentPlanner:
             return self._default_parameters(model_type, task_type)
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.planning_model,
                 messages=[
                     {
@@ -185,7 +185,7 @@ class ExperimentPlanner:
             return self._template_code(experiment_plan, framework)
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.planning_model,
                 messages=[
                     {
@@ -245,7 +245,7 @@ class ExperimentPlanner:
             return original_plan
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.planning_model,
                 messages=[
                     {

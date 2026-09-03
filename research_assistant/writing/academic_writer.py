@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 from pathlib import Path
 import yaml
 
-from ..utils.llm import create_openai_client
+from ..utils.llm import create_openai_client, chat_completion
 
 
 import logging
@@ -75,7 +75,7 @@ class AcademicWriter:
             return self._fallback_abstract(title, keywords, background, methods, results, conclusion)
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {
@@ -132,7 +132,7 @@ class AcademicWriter:
             return f"# Introduction\n\n{topic}\n\n{research_question}"
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {
@@ -185,7 +185,7 @@ class AcademicWriter:
             return f"# Methodology\n\n## {method_name}\n\n{technical_details}"
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {
@@ -241,7 +241,7 @@ class AcademicWriter:
             return f"# Results\n\n{experimental_setup}\n\nDatasets: {', '.join(datasets)}"
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {
@@ -297,7 +297,7 @@ class AcademicWriter:
             return f"# Discussion\n\n{interpretation}"
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {
@@ -342,7 +342,7 @@ class AcademicWriter:
             return original_text
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {
@@ -396,7 +396,7 @@ class AcademicWriter:
             return text
         
         try:
-            response = self.client.chat.completions.create(
+            response = chat_completion(self.client, 
                 model=self.model,
                 messages=[
                     {
