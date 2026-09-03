@@ -60,6 +60,7 @@ class ResearchAssistant:
         """
         self._verbose = verbose
         self.user_id = user_id
+        self.status = {}  # 各模块加载状态,用于 health_report()
         
         # 加载配置
         if config_path is None:
@@ -93,10 +94,13 @@ class ResearchAssistant:
                     data_dir=str(_PROJECT_ROOT / 'data'),
                     verbose=verbose
                 )
+                self.status['hybrid_retriever'] = 'ok'
             except Exception as e:
                 self.hybrid_retriever = None
+                self.status['hybrid_retriever'] = f'error: {e}'
         else:
             self.hybrid_retriever = None
+            self.status['hybrid_retriever'] = 'disabled (no config)'
         
         # Multi-Agent 模块（新）- LangGraph
         if HAS_LANGGRAPH:
@@ -108,10 +112,13 @@ class ResearchAssistant:
                     'citation_style': self.config.get('multi_agent', {}).get('citation_style', 'ieee')
                 }
                 self.agent_graph = ResearchAgentGraph(agent_config, self.hybrid_retriever, memory=self.memory, user_id=self.user_id)
+                self.status['agent_graph'] = 'ok'
             except Exception as e:
                 self.agent_graph = None
+                self.status['agent_graph'] = f'error: {e}'
         else:
             self.agent_graph = None
+            self.status['agent_graph'] = 'unavailable (langgraph not installed)'
         
         # 实验设计模块
         self.experiment_planner = ExperimentPlanner(
@@ -136,6 +143,10 @@ class ResearchAssistant:
         # 查询增强器
         self.query_enhancer = QueryEnhancer(self.config)
     
+    def health_report(self) -> Dict:
+        """返回各模块加载状态,便于诊断(而非静默降级)。"""
+        return dict(self.status)
+
     def _load_config(self, config_path: Path) -> Dict:
         """加载配置文件"""
         try:

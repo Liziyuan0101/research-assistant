@@ -18,11 +18,20 @@ def main():
     parser.add_argument('--query', type=str, help='Search query for papers')
     parser.add_argument('--workflow', action='store_true', help='Run complete workflow')
     parser.add_argument('--eval', action='store_true', help='Run retrieval evaluation')
+    parser.add_argument('--health', action='store_true', help='Show module health status')
 
     args = parser.parse_args()
 
     # 初始化助手
     assistant = ResearchAssistant(config_path=args.config)
+
+    if args.health:
+        print("\n" + "=" * 50)
+        print("模块健康状态")
+        print("=" * 50)
+        for module, status in assistant.health_report().items():
+            print(f"  {module}: {status}")
+        return
 
     if args.eval:
         summary = assistant.evaluate_retrieval()
