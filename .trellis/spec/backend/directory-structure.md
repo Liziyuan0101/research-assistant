@@ -38,9 +38,14 @@ research-assistant/
 │   ├── writing/                # academic writing + citations
 │   │   ├── academic_writer.py
 │   │   └── citation_manager.py
+│   ├── tools/                  # LLM-driven code generation / data analysis / visualization
+│   │   ├── code_generator.py
+│   │   ├── data_analyzer.py
+│   │   └── visualizer.py
 │   └── utils/                  # cross-cutting helpers
 │       ├── query_enhancer.py
 │       ├── helpers.py
+│       ├── llm.py
 │       └── logger.py
 ├── optional/
 │   └── finetune/               # LoRA fine-tuning (NOT part of core install)
@@ -58,7 +63,8 @@ Each top-level subpackage has one responsibility:
 - `agents/` — LangGraph multi-agent orchestration and agent tools.
 - `experiment/` — experiment plan design + code generation.
 - `writing/` — academic writing generation + citation management.
-- `utils/` — shared helpers with no LLM/domain logic (query enhancement, logging, small utilities).
+- `tools/` — LLM-driven code generation, data analysis, and visualization tools.
+- `utils/` — shared helpers (query enhancement, logging, config, LLM client construction).
 
 Rules:
 
