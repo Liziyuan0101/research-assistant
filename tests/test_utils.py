@@ -9,6 +9,7 @@ from research_assistant.utils.helpers import (
     format_paper_info,
     resolve_env_placeholders,
     resolve_device,
+    tokenize,
 )
 from research_assistant.utils.llm import resolve_api_key, create_openai_client
 
@@ -84,3 +85,17 @@ def test_resolve_device_passthrough():
 def test_resolve_device_auto_returns_valid():
     result = resolve_device("auto")
     assert result in ("cuda", "cpu")
+
+
+def test_tokenize_handles_chinese():
+    tokens = tokenize("锂电池剩余寿命预测")
+    # 中文应被切出 token(而非切空)
+    assert len(tokens) > 0
+    assert all('一' <= c <= '鿿' for c in ''.join(tokens))
+
+
+def test_tokenize_mixed_language():
+    tokens = tokenize("lithium-ion battery 寿命预测")
+    assert "lithium" in tokens
+    assert "battery" in tokens
+    assert any(t and '一' <= t[0] <= '鿿' for t in tokens)

@@ -7,7 +7,7 @@ import os
 import re
 import yaml
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 
 def load_config(config_path: str) -> Dict:
@@ -113,3 +113,19 @@ def resolve_device(device: str) -> str:
         except ImportError:
             return 'cpu'
     return device
+
+
+def tokenize(text: str) -> List[str]:
+    """中英文混合分词:英文/数字按词,中文用 jieba(未安装则退化为单字)。"""
+    text = text.lower()
+    tokens = re.findall(r'[a-z0-9]+', text)
+    chinese_chunks = re.findall(r'[一-鿿]+', text)
+    if chinese_chunks:
+        try:
+            import jieba
+            for chunk in chinese_chunks:
+                tokens.extend(w for w in jieba.cut(chunk) if w.strip())
+        except ImportError:
+            for chunk in chinese_chunks:
+                tokens.extend(list(chunk))
+    return tokens

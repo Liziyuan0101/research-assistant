@@ -32,7 +32,7 @@ from typing import List, Dict, Optional, Tuple, Any
 from dataclasses import dataclass, asdict
 from datetime import datetime
 import numpy as np
-from ..utils.helpers import resolve_device
+from ..utils.helpers import resolve_device, tokenize
 from tqdm import tqdm
 
 # FAISS
@@ -619,11 +619,8 @@ class HybridRetriever:
         self._faiss_chunk_ids.extend(chunk_ids)
     
     def _tokenize(self, text: str) -> List[str]:
-        """简单分词"""
-        # 转小写，按空格和标点分词
-        import re
-        tokens = re.findall(r'\b\w+\b', text.lower())
-        return tokens
+        """中英文混合分词"""
+        return tokenize(text)
     
     def _generate_hypothetical_document(self, query: str) -> str:
         """

@@ -739,8 +739,8 @@ def evaluate_bm25_retrieval(corpus_path: str, eval_path: str, k_values=(1, 3, 5)
     corpus_path: JSON 论文语料,每篇含 id/title/abstract。
     eval_path: RetrievalEvaluator 格式的评测数据。
     """
-    import re
     from rank_bm25 import BM25Okapi
+    from ..utils.helpers import tokenize
 
     corpus = json.loads(Path(corpus_path).read_text(encoding='utf-8'))
 
@@ -748,10 +748,10 @@ def evaluate_bm25_retrieval(corpus_path: str, eval_path: str, k_values=(1, 3, 5)
         def __init__(self, papers):
             self.paper_ids = [p['id'] for p in papers]
             texts = [f"Title: {p['title']}\n\nAbstract: {p['abstract']}" for p in papers]
-            self.index = BM25Okapi([re.findall(r'\b\w+\b', t.lower()) for t in texts])
+            self.index = BM25Okapi([tokenize(t) for t in texts])
 
         def search(self, query, top_k=5):
-            scores = self.index.get_scores(re.findall(r'\b\w+\b', query.lower()))
+            scores = self.index.get_scores(tokenize(query))
             top = np.argsort(scores)[::-1][:top_k]
             return [{'paper': {'paper_id': self.paper_ids[i]}, 'score': float(scores[i])}
                     for i in top if scores[i] > 0]
