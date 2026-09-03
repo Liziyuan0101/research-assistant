@@ -760,6 +760,33 @@ def evaluate_bm25_retrieval(corpus_path: str, eval_path: str, k_values=(1, 3, 5)
     return evaluator.evaluate_retriever(_BM25Retriever(corpus), k_values=list(k_values), verbose=False)
 
 
+def evaluate_hybrid_retrieval(corpus_path: str, eval_path: str, k_values=(1, 3, 5), data_dir=None) -> Dict:
+    """用混合检索(BM25 + BGE 稠密,不含精排)对真实语料做评测(需安装 FlagEmbedding)。"""
+    import tempfile
+
+    from .hybrid_retriever import HybridRetriever
+
+    corpus = json.loads(Path(corpus_path).read_text(encoding='utf-8'))
+    papers = [
+        {'id': p['id'], 'title': p['title'], 'authors': p.get('authors', []),
+         'abstract': p.get('abstract', ''), 'source': p.get('source', 'arxiv')}
+        for p in corpus
+    ]
+
+    retriever = HybridRetriever(config={}, data_dir=data_dir or tempfile.mkdtemp())
+    retriever.add_papers(papers, verbose=False)
+
+    class _Wrapper:
+        def __init__(self, r):
+            self.r = r
+
+        def search(self, query, top_k=5):
+            return self.r.search(query, top_k=top_k, use_rerank=False, verbose=False)
+
+    evaluator = RetrievalEvaluator(eval_path)
+    return evaluator.evaluate_retriever(_Wrapper(retriever), k_values=list(k_values), verbose=False)
+
+
 if __name__ == "__main__":
     # 创建示例评测数据
     eval_data_path = Path(__file__).parent.parent.parent / 'data' / 'eval' / 'sample_eval_data.json'
