@@ -446,9 +446,11 @@ class HybridRetriever:
         if self._bge_model is None:
             if not HAS_BGE:
                 raise ImportError("FlagEmbedding not installed")
+            # fp16 只在 CUDA 上开：CPU 上 half 精度算子缺失会直接报错
+            use_fp16 = str(self.device).startswith('cuda')
             self._bge_model = BGEM3FlagModel(
                 self.bge_model_name,
-                use_fp16=True,
+                use_fp16=use_fp16,
                 device=self.device
             )
         return self._bge_model
@@ -459,9 +461,11 @@ class HybridRetriever:
         if self._reranker is None:
             if not HAS_BGE:
                 raise ImportError("FlagEmbedding not installed")
+            # 同上：fp16 只在 CUDA 上开
+            use_fp16 = str(self.device).startswith('cuda')
             self._reranker = FlagReranker(
                 self.reranker_model_name,
-                use_fp16=True,
+                use_fp16=use_fp16,
                 device=self.device
             )
         return self._reranker

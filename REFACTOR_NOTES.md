@@ -152,16 +152,33 @@ skill 选择冒烟测试（5 条中英任务，0 次 LLM 调用）全部命中�
    改为"**权重能不能加载**"（try/except + 失败后不再重试），跳过时记
    `reranker_skipped: True` 并保持 RRF 顺序。
 
-### 6.3 ⚠️ 环境变化：之前"FlagEmbedding 缺失"的记录已失效
+### 6.3 环境与外部依赖（已解决）
 
 | 事实 | 状态 |
 |---|---|
-| `FlagEmbedding` | **1.3.5 现已安装**（`pip show FlagEmbedding` 确认）→ 此前 §3/§R 中"FlagEmbedding 缺失"的说明已过时 |
-| `BAAI/bge-m3` | 已缓存（8.5G）✓ 稠密检索可用 |
-| `BAAI/bge-reranker-v2-m3` | **未缓存** → 精排会被跳过（`reranker_skipped: True`） |
+| `FlagEmbedding` | **1.3.5 已安装**（`pip show` 确认）→ 此前"FlagEmbedding 缺失"的记录已过时 |
+| `BAAI/bge-m3`（稠密编码） | 已缓存 8.5G ✓ |
+| `BAAI/bge-reranker-v2-m3`（精排） | **已从 hf-mirror 下载补齐（2.14G）** ✓ `reranker_skipped: False` / `reranked: True` 实测通过 |
 
-**后果**：`BGE-Reranker 二阶段精排` 这句**当前跑不到**（代码路径在、权重不在）。
-要么下载该权重（约 2.3G），要么在对外材料里软化这一表述。**这条与 R2 同类，需你决定。**
+**下载要点**（本机 `huggingface.co` 被墙：`WinError 10054`；`hf-mirror.com` 可达）：
+```bash
+HF_ENDPOINT=https://hf-mirror.com HF_HUB_OFFLINE=0 <python> -c "
+import os; os.environ['HF_ENDPOINT']='https://hf-mirror.com'
+from huggingface_hub import snapshot_download
+snapshot_download('BAAI/bge-reranker-v2-m3', allow_patterns=[
+    'config.json','model.safetensors','sentencepiece.bpe.model',
+    'special_tokens_map.json','tokenizer.json','tokenizer_config.json'])"
+```
+用 `allow_patterns` 排除 `onnx/` 与 `assets/`：只需 6 个文件、2.14G（全量会多出数百 MB 无用体积）。
+实测耗时 725s。注意 Windows 无开发者模式时 HF 缓存退回**复制**而非符号链接（会多占空间）。
+
+### 6.3b 顺带修的第三个坑：CPU 上的 fp16
+
+`FlagReranker` / `BGEM3FlagModel` 原本硬编码 `use_fp16=True`。本机 **CPU-only**
+（`torch.cuda.is_available() == False`，`resolve_device('auto') → 'cpu'`），
+fp16 在 CPU 上算子缺失会直接报错。已改为**随设备决定**：
+`use_fp16 = str(self.device).startswith('cuda')`。与 §6.2 的第 2 个 bug 是同一类
+——"只在真跑时才暴露"。
 
 ### 6.4 复现
 
@@ -189,9 +206,9 @@ PYTHONPATH= HF_HUB_OFFLINE=1 <...>/python.exe -m pytest -q     # 103 passed
 
 - [ ] 评测集扩标：`data/eval/retrieval_eval.json` 4 条 → ≥50 条，且跨域（M9）
 - [ ] 跨域语料上的偏好回流消融（当前语料同域，测不出 —— 见 §3.5）
-- [ ] 下载 `BAAI/bge-reranker-v2-m3` 权重，让"二阶段精排"真正跑起来（见 §6.3）
 - [ ] 端到端延迟 P95 与任务完成率（需 `DEEPSEEK_API_KEY` / `OPENAI_API_KEY`；
-      注意 LLM 首调用含模型加载，实测检索类任务 34.5s 里大部分是 BGE-M3 首次加载）
+      注意首调用含模型加载：实测检索类任务 34.5s 里大部分是 BGE-M3 首次加载，
+      精排首次调用还要再加 reranker 的 2.14G 权重加载）
 - [ ] LoRA 写作指标的复现脚本（当前 ROUGE-L 0.47 / 术语 89% 无脚本可复现）
 
 
