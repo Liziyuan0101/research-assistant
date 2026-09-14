@@ -6,12 +6,14 @@
 
 | 功能                  | 说明                     | 技术方案                                            |
 | --------------------- | ------------------------ | --------------------------------------------------- |
-| **论文搜索**    | 从多个学术数据库获取论文 | arXiv, OpenAlex, Semantic Scholar, CORE, Dimensions |
+| **论文搜索**    | 从多个学术数据库获取论文 | arXiv, OpenAlex, Semantic Scholar                   |
 | **混合检索**    | 精准语义检索             | BM25 + BGE-M3 + BGE-Reranker                        |
 | **Multi-Agent** | 复杂任务自动化           | LangGraph + ReAct 策略                              |
 | **实验设计**    | 自动生成实验方案         | LLM + 论文上下文                                    |
 | **学术写作**    | 摘要/引言/方法生成       | DeepSeek/OpenAI API                                 |
-| **LoRA微调**    | 学术写作风格优化         | Qwen2.5 + PEFT                                      |
+| **LoRA微调**    | 学术写作风格优化         | Qwen2.5 + PEFT (见 `optional/finetune/`)            |
+| **记忆与个性化** | 记住用户偏好与检索历史   | SQLite + 词法召回 (`research_assistant/retrieval/memory.py`) |
+| **HTTP 服务**   | 把能力暴露为 REST 接口   | FastAPI (`api.py` / `scripts/serve.py`)             |
 
 ## 🏗️ 系统架构
 
@@ -19,23 +21,22 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                    ResearchAssistant                        │
 ├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │  Retrieval  │  │ Experiment  │  │   Writing   │         │
-│  │    Agent    │  │    Agent    │  │    Agent    │         │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘         │
-│         └────────────────┼────────────────┘                 │
-│                          ↓                                  │
 │              ┌───────────────────────┐                      │
-│              │   LangGraph Router    │                      │
-│              │   (ReAct Strategy)    │                      │
+│              │  Supervisor (Router)  │                      │
+│              │  LangGraph 状态图      │                      │
 │              └───────────┬───────────┘                      │
-├──────────────────────────┼──────────────────────────────────┤
-│  ┌───────────────────────▼───────────────────────┐         │
-│  │           Hybrid Retrieval Engine             │         │
-│  │  BM25 + BGE-M3 → RRF → BGE-Reranker          │         │
-│  └───────────────────────────────────────────────┘         │
+│  ┌─────────────┐  ┌──────▼──────┐  ┌─────────────┐          │
+│  │  Retrieval  │  │ Experiment  │  │   Writing   │          │
+│  │    Agent    │  │    Agent    │  │    Agent    │          │
+│  └─────────────┘  └─────────────┘  └─────────────┘          │
 ├─────────────────────────────────────────────────────────────┤
-│  数据源: arXiv | OpenAlex | Semantic Scholar | CORE        │
+│  ┌──────────────────────────┐  ┌─────────────────────────┐  │
+│  │    Hybrid Retrieval      │  │  Memory (偏好/检索历史)  │  │
+│  │ BM25 + BGE-M3 → RRF →    │  │  SQLite                  │  │
+│  │        BGE-Reranker      │  │  retrieval/memory.py     │  │
+│  └──────────────────────────┘  └─────────────────────────┘  │
+├─────────────────────────────────────────────────────────────┤
+│  数据源: arXiv | OpenAlex | Semantic Scholar                │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -120,14 +121,20 @@ research-assistant --query "battery prediction" --workflow
 ### 运行示例
 
 ```bash
-# 快速入门 (3分钟)
-python examples/01_quick_start.py
+# 论文检索 (多源API搜索 → 建索引 → 混合检索)
+python examples/01_paper_retrieval.py
 
-# 高级检索 (HyDE, 方法对比)
-python examples/02_advanced_retrieval.py
+# 实验设计 (LLM 生成实验方案)
+python examples/02_experiment_design.py
 
-# 完整科研工作流
-python examples/03_research_workflow.py
+# 学术写作 (摘要/引言/方法生成)
+python examples/03_academic_writing.py
+
+# 可复现的检索评测 (用仓库内评测集,无需 LLM)
+python scripts/eval_retrieval.py --mode bm25
+
+# 启动 HTTP 服务 (需先 pip install -e ".[serve]")
+python scripts/serve.py
 ```
 
 ## 📖 检索流程
@@ -162,15 +169,16 @@ python examples/03_research_workflow.py
 
 ## 🔧 核心模块
 
-### 论文检索 (`modules/paper_retrieval/`)
+### 论文检索 (`research_assistant/retrieval/`)
 
 | 文件                         | 功能                                                              |
 | ---------------------------- | ----------------------------------------------------------------- |
-| `paper_retriever.py`         | 多源API搜索 (arXiv, OpenAlex, Semantic Scholar, CORE, Dimensions) |
+| `paper_retriever.py`         | 多源API搜索 (arXiv, OpenAlex, Semantic Scholar；CORE/Dimensions 需 Key，默认关闭) |
 | `hybrid_retriever.py`        | BM25 + BGE-M3 + BGE-Reranker 混合检索                             |
 | `pdf_markdown_processor.py`  | PDF解析、清洗、切分、入库                                         |
 | `paper_interpreter.py`       | LLM论文解读                                                       |
-| `evaluation.py`              | RAGAS检索评测                                                     |
+| `evaluation.py`              | 检索评测 (Precision@k / Recall@k / MRR；可选 RAGAS 指标)          |
+| `memory.py`                  | 用户偏好与检索历史记忆 (SQLite)                                   |
 
 #### PDF 处理流程
 
@@ -209,37 +217,41 @@ python examples/03_research_workflow.py
 └─────────────────────────────────────────────────────────────┘
 ```
 
-#### 三层存储架构
+#### 数据目录结构
 
 ```
 data/
-├── index/              # 索引层
-│   ├── faiss_hnsw.index   # FAISS HNSW 向量索引
-│   └── bm25.pkl           # BM25 稀疏索引
-├── metadata/           # 元数据层
-│   └── papers.db          # SQLite (papers表 + chunks表)
-└── cache/              # 缓存层
-    └── *.pdf              # 下载的PDF文件
+├── papers/             # PDF 原件（可复用资产，勿删）
+├── cache/search/       # 搜索响应缓存（可再生，24h TTL）
+├── embeddings/         # documents.pkl + faiss.index
+├── index/              # bm25_data.pkl / faiss_hnsw.index / faiss_chunk_ids.pkl
+├── metadata/           # papers.db  (SQLite: papers 表 + chunks 表)
+├── eval/               # 评测集 (corpus.json / retrieval_eval.json)
+└── memory.db           # 用户偏好与检索历史
 ```
 
-### Multi-Agent (`modules/agents/`)
+> 除 `data/eval/` 外，`data/` 下内容均不入 git（见 `.gitignore`）。
+> PDF 与搜索缓存**分开存放**：前者是可复用资产，后者是可再生数据。
+
+### Multi-Agent (`research_assistant/agents/`)
 
 | 文件               | 功能                                       |
 | ------------------ | ------------------------------------------ |
-| `multi_agent.py` | LangGraph状态图，三大Agent协作             |
+| `multi_agent.py` | LangGraph状态图：Supervisor 路由 + 三个 Agent (检索/实验/写作) |
 | `tools.py`       | Agent工具集 (Python执行、统计分析、可视化) |
 
-### 实验与写作
+### 实验 / 写作 / 微调
 
-| 模块                   | 功能                                  |
-| ---------------------- | ------------------------------------- |
-| `experiment_agent/`  | 实验方案自动设计                      |
-| `writing_assistant/` | 学术写作辅助 (摘要、引言、方法、结果) |
-| `training/`          | LoRA微调训练                          |
+| 模块                             | 功能                                  |
+| -------------------------------- | ------------------------------------- |
+| `research_assistant/experiment/` | 实验方案自动设计 (`experiment_planner.py`) |
+| `research_assistant/writing/`    | 学术写作 + 引用管理 (`academic_writer.py` / `citation_manager.py`) |
+| `optional/finetune/`             | LoRA 微调 (`lora_trainer.py` / `data_processor.py` / `evaluator.py`) |
+| `research_assistant/api.py`      | FastAPI 服务层 (`scripts/serve.py` 启动) |
 
 ## ⚙️ 配置说明
 
-配置文件: `config/config.yaml`
+配置文件: `research_assistant/config/config.yaml`
 
 ```yaml
 # LLM配置
@@ -267,12 +279,32 @@ hybrid_retrieval:
 
 ## 📊 性能指标
 
-| 模块            | 指标        | 数值           |
-| --------------- | ----------- | -------------- |
-| 混合检索        | Precision@5 | **89%**  |
-| Multi-Agent     | 任务完成率  | **85%**  |
-| 学术写作 (LoRA) | ROUGE-L     | **0.47** |
-| 学术写作 (LoRA) | 术语准确率  | **89%**  |
+**本仓库只收录能由仓库内脚本复现的数字。**
+
+```bash
+python scripts/eval_retrieval.py --mode bm25   # 无需 LLM API Key、无需下载模型
+```
+
+| 模块            | 指标        | 数值        | 说明     |
+| --------------- | ----------- | ----------- | -------- |
+| 检索 (BM25 基线) | Precision@5 | **55.00%**  | 可复现   |
+| 检索 (BM25 基线) | Recall@5    | **87.50%**  | 可复现   |
+| 检索 (BM25 基线) | Hit@5       | **100.00%** | 可复现   |
+| 检索 (BM25 基线) | MRR         | **68.75%**  | 可复现   |
+
+> ⚠️ **当前评测集太小，不足以支撑结论。**
+> `data/eval/retrieval_eval.json` 只有 **4 条 query**（语料 23 篇），且 q3/q4 各只标注
+> 1 篇相关文献 —— 因此 **Precision@5 的理论上限只有 60%**，
+> 任何高于 60% 的数值都不可能由该评测集产生。
+> **扩标到 ≥50 条且跨域之前，请勿对外引用检索指标。**
+
+**待补测**（仓库内暂无复现脚本，引用前请先补齐）：
+
+| 模块            | 指标        | 缺少什么                                  |
+| --------------- | ----------- | ----------------------------------------- |
+| Multi-Agent     | 任务完成率  | 需 LLM API Key + 明确的任务成功判定标准    |
+| 学术写作 (LoRA) | ROUGE-L     | 需 `optional/finetune` 的评测脚本          |
+| 学术写作 (LoRA) | 术语准确率  | 需术语表与判定脚本                        |
 
 ## 🛠️ 技术栈
 
@@ -286,13 +318,13 @@ hybrid_retrieval:
 | 文本切分   | LangChain MarkdownHeaderTextSplitter                |
 | Agent框架  | LangGraph, LangChain                                |
 | 微调       | PEFT LoRA, TRL                                      |
-| 论文API    | arXiv, OpenAlex, Semantic Scholar, CORE, Dimensions |
+| 论文API    | arXiv, OpenAlex, Semantic Scholar (CORE/Dimensions 需 Key，默认关闭) |
 
 ## 📁 项目结构
 
 ```
 research-assistant/
-├── pyproject.toml               # 打包配置 (core/agent/finetune extras)
+├── pyproject.toml               # 打包配置 (extras: agent/finetune/dev/serve)
 ├── research_assistant/          # 可安装包
 │   ├── __init__.py              # 导出 ResearchAssistant
 │   ├── assistant.py             # ResearchAssistant 门面类
@@ -361,15 +393,43 @@ class ResearchAssistant:
 
 ## ❓ 常见问题
 
-### 1. 混合检索器初始化失败
+### 1. 混合检索器初始化失败 / 模型下载不了
 
-首次运行需要下载BGE模型 (~2GB)，请确保网络畅通。
+首次运行需下载 BGE 模型（BGE-M3 约 2.3GB，BGE-Reranker 约 2.1GB）。
+
+**国内网络下 `huggingface.co` 通常不可达**（表现：`WinError 10054` 连接被强制关闭），
+请走镜像：
+
+```bash
+export HF_ENDPOINT=https://hf-mirror.com     # Windows PowerShell: $env:HF_ENDPOINT="https://hf-mirror.com"
+python -c "
+import os; os.environ['HF_ENDPOINT']='https://hf-mirror.com'
+from huggingface_hub import snapshot_download
+snapshot_download('BAAI/bge-m3')
+snapshot_download('BAAI/bge-reranker-v2-m3')"
+```
+
+若本地已有权重，可设 `HF_HUB_OFFLINE=1` 完全离线运行。
+
+模型缺失时的行为是**如实降级而非静默失败**：`HybridRetriever.last_search_meta` 会给出
+`backend`（`bm25+dense` / `bm25` / `none`）与 `reranker_skipped`，据此可判断当前跑到哪一步。
 
 ### 2. LLM功能不可用
 
 需要设置 `DEEPSEEK_API_KEY` 或 `OPENAI_API_KEY` 环境变量。
+未配置时实验设计/学术写作会走内置模板回退，可离线跑通但输出非 LLM 产物。
 
-### 3. GPU显存不足 (LoRA微调)
+### 3. 论文检索全部超时
+
+arXiv API 与 Semantic Scholar 在国内常见 5xx / 429。`paper_retrieval.sources` 里
+**OpenAlex 无需 API Key 且通常可用**，建议优先：
+
+```yaml
+paper_retrieval:
+  sources: [openalex, arxiv, semantic_scholar]
+```
+
+### 4. GPU显存不足 (LoRA微调)
 
 - 使用更小的模型: `Qwen/Qwen2.5-1.5B-Instruct`
 - 减小batch_size: `per_device_train_batch_size=1`
