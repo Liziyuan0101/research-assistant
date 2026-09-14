@@ -58,12 +58,14 @@ conda activate research_assistant
 ### 3. 安装依赖
 
 ```bash
-# 安装本包 (core 依赖,不含 GPU/torch)
-pip install -e ".[core]"
+# 安装本包 (基础依赖，不含 torch/GPU)
+pip install -e .
 
 # 需要 Multi-Agent / 微调时:
 #   pip install -e ".[agent]"      # LangGraph 多智能体
 #   pip install -e ".[finetune]"   # 混合检索(BGE/FAISS) + LoRA 微调
+#   pip install -e ".[serve]"      # FastAPI 服务
+#   pip install -e ".[dev]"        # 测试
 
 # GPU版本 (推荐)
 pip install torch --index-url https://download.pytorch.org/whl/cu118
