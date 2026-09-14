@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[core,dev]"
+          pip install -e ".[dev]"
           # 测试需要 hybrid_retriever 的检索依赖(不拉 torch/GPU)
           pip install rank_bm25 faiss-cpu
 
