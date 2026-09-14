@@ -14,10 +14,35 @@ def retriever(tmp_path):
     return PaperRetriever(
         {
             "cache_directory": str(tmp_path / "papers"),
+            # 必须一并指向 tmp，否则 __init__ 会在仓库里建 data/cache/search（测试污染）
+            "search_cache_dir": str(tmp_path / "search_cache"),
             "max_results": 5,
             "download_pdf": False,
         }
     )
+
+
+def test_cache_key_is_deterministic(retriever):
+    """缓存键必须跨进程稳定。
+
+    回归测试：原实现用内置 hash()，而 Python 对 str 默认按进程随机加盐 ——
+    _save_to_cache 写的文件名，下一次进程里 load_from_cache 永远找不到，
+    缓存从未生效（且在 data/papers 里堆了 18 个垃圾文件）。
+    """
+    import hashlib
+
+    assert retriever._cache_key("battery rul") == hashlib.sha1(b"battery rul").hexdigest()[:16]
+    # 归一化：大小写 / 多余空白不影响键
+    assert retriever._cache_key("  Battery   RUL  ") == retriever._cache_key("battery rul")
+
+
+def test_cache_roundtrip_within_dir(retriever):
+    """写入后能读回（同进程），且文件落在 search_cache_dir 而不是 PDF 目录。"""
+    papers = [{"id": "x", "title": "T"}]
+    retriever._save_to_cache("some query", papers)
+    assert retriever.load_from_cache("some query") == papers
+    assert retriever.search_cache_dir != retriever.cache_dir
+    assert not list(retriever.cache_dir.glob("search_*.json"))
 
 
 def test_reconstruct_abstract_reorders_words(retriever):

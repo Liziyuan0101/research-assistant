@@ -13,6 +13,7 @@ Paper Retrieval Module
 
 import os
 import json
+import hashlib
 import logging
 import arxiv
 from typing import List, Dict, Optional
@@ -39,14 +40,25 @@ class PaperRetriever:
     
     def __init__(self, config: dict):
         self.config = config
+        project_root = Path(__file__).parent.parent.parent
+
+        # PDF 存放目录（可复用资产）
         cache_path = config.get('cache_directory', 'data/papers')
         # 如果是相对路径，则相对于项目根目录
         if not Path(cache_path).is_absolute():
-            project_root = Path(__file__).parent.parent.parent
             self.cache_dir = project_root / cache_path
         else:
             self.cache_dir = Path(cache_path)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
+
+        # 搜索响应缓存**单独存放**：缓存是可再生数据，不该和 PDF 资产混在一个目录里
+        search_cache = config.get('search_cache_dir', 'data/cache/search')
+        if not Path(search_cache).is_absolute():
+            self.search_cache_dir = project_root / search_cache
+        else:
+            self.search_cache_dir = Path(search_cache)
+        self.search_cache_dir.mkdir(parents=True, exist_ok=True)
+
         self.max_results = config.get('max_results', 10)
         
         # 初始化 QueryEnhancer 用于关键短语提取
@@ -608,10 +620,23 @@ class PaperRetriever:
                 
         return unique_papers
     
+    @staticmethod
+    def _cache_key(query: str) -> str:
+        """稳定的缓存键。
+
+        ⚠️ 不能用内置 ``hash()``：Python 对 str 默认**按进程随机加盐**
+        （PYTHONHASHSEED 未固定时），同一个 query 在不同进程里得到不同值。
+        那样 ``_save_to_cache`` 写下的文件名，下一次进程里 ``load_from_cache``
+        永远找不到 —— 缓存从未生效，只是在目录里堆垃圾文件。
+        实测：hash('battery') 三次运行得到三个完全不同的值。
+        """
+        norm = ' '.join(query.strip().lower().split())
+        return hashlib.sha1(norm.encode('utf-8')).hexdigest()[:16]
+
     def _save_to_cache(self, query: str, papers: List[Dict]):
         """保存搜索结果到缓存"""
         try:
-            cache_file = self.cache_dir / f"search_{hash(query)}.json"
+            cache_file = self.search_cache_dir / f"search_{self._cache_key(query)}.json"
             cache_data = {
                 'query': query,
                 'timestamp': datetime.now().isoformat(),
@@ -627,7 +652,7 @@ class PaperRetriever:
     def load_from_cache(self, query: str) -> Optional[List[Dict]]:
         """从缓存加载搜索结果"""
         try:
-            cache_file = self.cache_dir / f"search_{hash(query)}.json"
+            cache_file = self.search_cache_dir / f"search_{self._cache_key(query)}.json"
             
             if cache_file.exists():
                 with open(cache_file, 'r', encoding='utf-8') as f:
@@ -678,6 +703,7 @@ if __name__ == "__main__":
     # 测试代码
     config = {
         'cache_directory': './data/papers',
+        'search_cache_dir': './data/cache/search',
         'max_results': 5,
         'download_pdf': False,
         'sources': ['arxiv']

@@ -59,7 +59,7 @@ hybrid_retrieval:
   storage:
     index_dir: "data/index"  # FAISS HNSW 索引 (~5-10GB for 100k papers)
     metadata_db: "data/metadata/papers.db"  # SQLite 元数据 (~1GB)
-    cache_dir: "data/cache"  # PDF 缓存 (动态)
+    cache_dir: "data/cache"  # ⚠️ 代码不读这个键（实际读 paper_retrieval.cache_directory）；保留仅为兼容旧配置
   
 # Paper Retrieval
 paper_retrieval:
@@ -71,7 +71,8 @@ paper_retrieval:
     # - dimensions      # 需要API Key，注册: https://app.dimensions.ai/
     # - google_scholar  # 已禁用：无官方API，容易被封禁
   max_results: 10
-  cache_directory: "data/papers"
+  cache_directory: "data/papers"          # PDF 存放（可复用资产）
+  search_cache_dir: "data/cache/search"   # 搜索响应缓存（可再生数据，24h TTL）
   download_pdf: true
   
   arxiv:

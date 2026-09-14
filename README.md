@@ -319,7 +319,13 @@ research-assistant/
 ├── examples/                    # 示例代码
 ├── scripts/                     # 入口脚本 (arxiv_ingest / eval_retrieval / serve)
 ├── tests/                       # 单元测试
-├── data/                        # 数据目录 (PDF 原件 + 可重建索引)
+├── data/                        # 数据目录
+│   ├── papers/                  #   PDF 原件（可复用资产，勿删）
+│   ├── cache/search/            #   搜索响应缓存（可再生数据，24h TTL）
+│   ├── index/ embeddings/       #   检索索引（可重建）
+│   ├── metadata/papers.db       #   SQLite 元数据
+│   ├── eval/                    #   评测集（唯一入库 git 的文件）
+│   └── memory.db                #   用户偏好记忆
 ├── pyproject.toml               # 依赖与打包 (唯一来源)
 ├── README.md                    # 本文档
 └── .env                         # 环境变量 (含 API key，已 gitignore)
