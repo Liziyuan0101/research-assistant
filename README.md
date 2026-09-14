@@ -346,7 +346,8 @@ python scripts/eval_retrieval.py --mode crossdomain \
 > **根因**：偏好描述"用户是谁"，相关性描述"文档答不答这个查询"，两者**正交**。
 > 把先验线性混进相关性打分，等价于给相关性信号加噪声——λ 越大越差。
 > **因此本项目不把偏好用于相关性打分**：个性化只作用于
-> 画像注入 / 结果标注 / 可选查询提示。详见 `REFACTOR_NOTES.md` §5 与
+> 画像注入 / 结果标注 / 可选查询提示。完整实验设置与逐组数据见 `data/eval/README.md`
+> 与 `data/eval/crossdomain_results.json`；机制分析见
 > `skills/paper-retrieval/references/scoring-and-personalization.md`。
 
 > ⚠️ **当前评测集太小，不足以支撑结论。**
