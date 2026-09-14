@@ -130,6 +130,7 @@ def preference_prior(
     lam: float = 0.2,
     base_scores: Optional[Sequence[float]] = None,
     neg_lambda: Optional[float] = None,
+    mode: str = 'boost',
 ) -> np.ndarray:
     """把偏好相似度混合进打分。
 
@@ -137,28 +138,36 @@ def preference_prior(
         profile: :func:`build_profile` 的结果。
         doc_texts: 候选文档文本（与 ``base_scores`` 同序）。
         encoder: 编码器（须与建画像时同一份权重）。
-        lam: 正向偏好权重 ``λ ∈ [0, 1]``。``0`` 表示不做个性化。
+        lam: 先验强度 ``λ ∈ [0, 1]``。``0`` 表示不做个性化。
         base_scores: 原始检索分数；``None`` 时只返回偏好分数。
         neg_lambda: 负向偏好权重，默认 ``lam / 2``。
+        mode: 注入策略
+
+            * ``'boost'``    —— ``(1-λ)·minmax(base) + λ·minmax(prior)``。
+              偏好会**重写**文档分数，与查询无关的用户先验被混进相关性信号。
+            * ``'tiebreak'`` —— **只在基分近似并列的候选之间**用先验决定次序，
+              不跨越明显分差。动机：偏好应该打破平局，而不是覆盖相关性。
+              用 ``base ± ε·(prior - mean(prior))`` 表达次序，``ε`` 取保证
+              不越过分带边界的小量。
 
     Returns:
         与 ``doc_texts`` 等长的打分数组。
     """
+    n = len(doc_texts)
     if base_scores is not None:
-        base = np.asarray(base_scores, dtype='float32')
-        base_norm = _minmax(base)
+        base_norm = _minmax(np.asarray(base_scores, dtype='float32'))
     else:
         base_norm = None
 
     if lam <= 0 or profile.is_empty:
-        return base_norm if base_norm is not None else np.zeros(len(doc_texts), dtype='float32')
+        return base_norm if base_norm is not None else np.zeros(n, dtype='float32')
 
     vecs = encoder.encode(list(doc_texts))
     if vecs is None:
         logger.warning('preference_prior: encoder unavailable; returning base scores unchanged')
-        return base_norm if base_norm is not None else np.zeros(len(doc_texts), dtype='float32')
+        return base_norm if base_norm is not None else np.zeros(n, dtype='float32')
 
-    prior = np.zeros(len(doc_texts), dtype='float32')
+    prior = np.zeros(n, dtype='float32')
     if profile.pos_vector is not None:
         prior += _minmax(vecs @ profile.pos_vector)
 
@@ -167,8 +176,16 @@ def preference_prior(
         prior -= nl * _minmax(vecs @ profile.neg_vector)
 
     prior = _minmax(prior)
+
     if base_norm is None:
         return prior
+
+    if mode == 'tiebreak':
+        # 分带宽度随 λ 增长；ε 取带宽的 1/4，保证组内重排不会跨出本带
+        band = 0.02 + 0.08 * float(lam)
+        eps = band / 4.0
+        return base_norm + eps * (prior - float(np.mean(prior)))
+
     return (1.0 - lam) * base_norm + lam * prior
 
 

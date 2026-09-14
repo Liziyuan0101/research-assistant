@@ -13,7 +13,7 @@ import json
 import random
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple, Any
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, fields
 from datetime import datetime
 import numpy as np
 
@@ -112,18 +112,32 @@ class RetrievalEvaluator:
             self.load_eval_data(eval_data_path)
     
     def load_eval_data(self, path: str):
-        """加载评测数据"""
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            self.eval_samples = [
-                EvalSample(**sample) for sample in data.get('samples', [])
-            ]
-            logger.info(f"📂 Loaded {len(self.eval_samples)} evaluation samples")
-        except Exception as e:
-            logger.error(f"❌ Error loading eval data: {e}")
-    
+        """加载评测数据。
+
+        未知字段会被并入 ``EvalSample.metadata``，而不是抛
+        ``TypeError: unexpected keyword argument`` —— 允许评测集携带
+        ``domain`` / ``topic_id`` 等分析用元信息（跨域消融按域分组需要）。
+
+        加载失败**直接抛出**：原来只 log 不 raise，会让 eval_samples 静默为空，
+        下游再以 KeyError 的形式炸在别处，极难定位。
+        """
+        known = {f.name for f in fields(EvalSample)}
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        samples = []
+        for raw in data.get('samples', []):
+            extra = {k: v for k, v in raw.items() if k not in known}
+            kwargs = {k: v for k, v in raw.items() if k in known}
+            if extra:
+                merged = dict(kwargs.get('metadata') or {})
+                merged.update(extra)
+                kwargs['metadata'] = merged
+            samples.append(EvalSample(**kwargs))
+
+        self.eval_samples = samples
+        logger.info(f"📂 Loaded {len(self.eval_samples)} evaluation samples from {path}")
+
     def save_eval_data(self, path: str):
         """保存评测数据"""
         try:
@@ -863,6 +877,9 @@ def evaluate_personalized_retrieval(
             if self.prior_mode == 'boost' and self.lam > 0 and not self.profile.is_empty:
                 scores = preference_prior(self.profile, texts, self.encoder, lam=self.lam,
                                           base_scores=base)
+            elif self.prior_mode == 'tiebreak' and self.lam > 0 and not self.profile.is_empty:
+                scores = preference_prior(self.profile, texts, self.encoder, lam=self.lam,
+                                          base_scores=base, mode='tiebreak')
             else:
                 scores = base
             self.last_scores = scores
