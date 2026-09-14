@@ -315,10 +315,12 @@ research-assistant/
 ├── optional/
 │   └── finetune/                # LoRA微调 (非核心)
 ├── examples/                    # 示例代码
-├── data/                        # 数据目录
-├── output/                      # 输出目录
-├── requirements.txt             # 依赖
-└── .env                         # 环境变量
+├── scripts/                     # 入口脚本 (arxiv_ingest / eval_retrieval / serve)
+├── tests/                       # 单元测试
+├── data/                        # 数据目录 (PDF 原件 + 可重建索引)
+├── pyproject.toml               # 依赖与打包 (唯一来源)
+├── README.md                    # 本文档
+└── .env                         # 环境变量 (含 API key，已 gitignore)
 ```
 
 ## 📝 API参考
