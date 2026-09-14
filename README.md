@@ -129,10 +129,35 @@ python examples/02_experiment_design.py
 # 学术写作
 python examples/03_academic_writing.py
 
+# 端到端演示（单 Agent + Skills + 记忆个性化；无需 API key 即可跑通）
+python scripts/demo_e2e.py
+
 # 可复现检索评测 / 记忆召回 / 架构度量
 python scripts/eval_retrieval.py --mode bm25
 python scripts/memory_recall_demo.py
 python scripts/measure_refactor.py
+```
+
+### 命令行（默认后端：单 Agent + Skills）
+
+```bash
+# 模块状态 / skill 列表与上下文占用
+research-assistant --health
+research-assistant --skills
+
+# 写入偏好后做个性化混合检索（! 前缀 = 负面偏好）
+research-assistant --user-id lzy --lambda 0.25 \
+    --pref "method=Bayesian deep learning for uncertainty quantification" \
+    --pref "keyword=remaining useful life" \
+    --pref "style=!purely empirical curve fitting" \
+    --search "remaining useful life prediction of lithium-ion batteries"
+
+# 交给 Agent 自动选 skill（路由 0 次 LLM 调用）；--chain 串起多个 skill
+research-assistant --user-id lzy --agent "帮我设计一个消融实验，对比 PINN 和纯数据驱动模型"
+research-assistant --user-id lzy --agent "检索电池早期寿命预测的论文，然后设计一个对比实验" --chain
+
+# 记忆画像（诊断个性化为何生效/不生效）
+research-assistant --user-id lzy --memory
 ```
 
 ## 📖 检索流程

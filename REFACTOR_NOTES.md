@@ -121,14 +121,81 @@ skill 选择冒烟测试（5 条中英任务，0 次 LLM 调用）全部命中�
 
 **结论：在评测集扩标（≥50 query）且**跨域**之前，不得宣称个性化带来的检索增益。**
 
-## 4. 未做 / 待办
+## 4. 第二阶段：把新架构接到**产品路径**（本次）
+
+**动机**：上一阶段（§2–§5）只落地了组件与测试，产品入口 `ResearchAssistant` **仍然走
+`ResearchAgentGraph`**，而且"偏好回流检索打分先验"**只存在于评测脚本** ——
+`HybridRetriever` 完全没有接收偏好的入口。也就是说：组件是真的，接线是假的。
+
+### 6.1 本次改动
+
+| 位置 | 内容 |
+|---|---|
+| `agents/single_agent.py`（新增） | 单 Agent 运行时：路由一跳 → 按需加载 skill → 执行器分发 → 记忆落库；无 LLM 时如实标注 `llm_used=False` |
+| `retrieval/hybrid_retriever.py` | `search()` 新增 `preference_profile / prior_lambda / memory / user_id`，并在 RRF 之后增加**个性化步骤**（偏好先验重算打分）；`last_search_meta` 如实上报 `backend / reranker_skipped / personalized` |
+| `_encode_dense()`（新增） | 稠密编码统一入口：FlagEmbedding 优先，缺失时回退 sentence-transformers（**同一份** bge-m3 权重 → 与记忆层同向量空间） |
+| `assistant.py` | 新增 `backend='single'\|'graph'`、`prior_lambda`、`data_dir`；`run_agent()` 按后端分发；`hybrid_search(personalize=...)`；`add_preference / get_preferences / memory_report`；`health_report` 增加 skills 与 dense_available |
+| `cli.py` | `--user-id / --backend / --lambda / --pref CAT=VAL（! 前缀=负面）/ --search / --agent / --chain / --skills / --memory` |
+| `api.py` | 新增 `/agent`、`/skills`、`/local-search`、`/memory/stats`、`/memory/traces` |
+| `config/config.yaml` | 新增 `personalization:` 段（lambda / 偏好类别 / 半衰期 / 权重上限） |
+| `scripts/demo_e2e.py`（新增） | 端到端演示，**不需要 API key** 即可跑通全链路 |
+
+### 6.2 修掉的两个**真 bug**（都是本次实测才暴露的）
+
+1. **链式编排顺序错误**：按**相关度**顺序执行，导致 `experiment-design` 先于
+   `paper-retrieval` 跑，下游 skill 拿不到检索结果。
+   改为按**依赖顺序**（`_SKILL_DEPENDENCY_ORDER`：检索 → 实验 → 写作）。
+   —— 相关度决定"要不要执行"，依赖决定"按什么次序执行"，两者必须分开。
+2. **Reranker 守卫写错层级**：原守卫是"FlagEmbedding 能不能 import"。但装了
+   FlagEmbedding 而本地**没有** `BAAI/bge-reranker-v2-m3` 权重时，`FlagReranker(...)`
+   会抛 `OSError`（离线无网可下），直接把整个检索打挂。
+   改为"**权重能不能加载**"（try/except + 失败后不再重试），跳过时记
+   `reranker_skipped: True` 并保持 RRF 顺序。
+
+### 6.3 ⚠️ 环境变化：之前"FlagEmbedding 缺失"的记录已失效
+
+| 事实 | 状态 |
+|---|---|
+| `FlagEmbedding` | **1.3.5 现已安装**（`pip show FlagEmbedding` 确认）→ 此前 §3/§R 中"FlagEmbedding 缺失"的说明已过时 |
+| `BAAI/bge-m3` | 已缓存（8.5G）✓ 稠密检索可用 |
+| `BAAI/bge-reranker-v2-m3` | **未缓存** → 精排会被跳过（`reranker_skipped: True`） |
+
+**后果**：`BGE-Reranker 二阶段精排` 这句**当前跑不到**（代码路径在、权重不在）。
+要么下载该权重（约 2.3G），要么在对外材料里软化这一表述。**这条与 R2 同类，需你决定。**
+
+### 6.4 复现
+
+```bash
+PYTHONPATH= HF_HUB_OFFLINE=1 <conda research_assistant>/python.exe scripts/demo_e2e.py
+PYTHONPATH= HF_HUB_OFFLINE=1 <...>/python.exe -m research_assistant.cli --health
+PYTHONPATH= HF_HUB_OFFLINE=1 <...>/python.exe -m research_assistant.cli \
+    --user-id lzy --lambda 0.25 --pref "method=Bayesian deep learning" \
+    --pref "style=!purely empirical curve fitting" \
+    --search "remaining useful life prediction of lithium-ion batteries"
+PYTHONPATH= HF_HUB_OFFLINE=1 <...>/python.exe -m pytest -q     # 103 passed
+```
+
+实测（demo 输出）：
+- 检索后端 `bm25+dense`（sentence-transformers/FlagEmbedding），`personalized: True`
+- 个性化**确实改变排序**（如偏好画像把 `Two-stage Early Prediction` 从 #2 顶到 #1）
+- 链式编排按依赖序：`['paper-retrieval', 'experiment-design', 'academic-writing']`，
+  实验方案拿到 **5 篇**上游检索结果
+- 路由跳数 1、**LLM 调用 0**；常驻 290 字符 / 加载 1016–1178 字符
+- `test_*` 共 **103 passed**
+
+---
+
+## 5. 未做 / 待办
 
 - [ ] 评测集扩标：`data/eval/retrieval_eval.json` 4 条 → ≥50 条，且跨域（M9）
-- [ ] 跨域语料上的偏好回流消融（当前语料同域，测不出）
-- [ ] 端到端延迟 P95 与任务完成率（需 `DEEPSEEK_API_KEY` 或 `OPENAI_API_KEY`）
+- [ ] 跨域语料上的偏好回流消融（当前语料同域，测不出 —— 见 §3.5）
+- [ ] 下载 `BAAI/bge-reranker-v2-m3` 权重，让"二阶段精排"真正跑起来（见 §6.3）
+- [ ] 端到端延迟 P95 与任务完成率（需 `DEEPSEEK_API_KEY` / `OPENAI_API_KEY`；
+      注意 LLM 首调用含模型加载，实测检索类任务 34.5s 里大部分是 BGE-M3 首次加载）
 - [ ] LoRA 写作指标的复现脚本（当前 ROUGE-L 0.47 / 术语 89% 无脚本可复现）
 
-## 5. 对既有测试的影响
+
+## 6. 对既有测试的影响
 
 `tests/test_memory.py::test_invalid_preference_category_raises` 的断言已随契约变更而更新：
 未知类别默认**告警并自动登记**（`PreferenceSchema(strict=True)` 可恢复旧的抛错行为）。
