@@ -8,7 +8,8 @@
 | --------------------- | ------------------------ | --------------------------------------------------- |
 | **论文搜索**    | 从多个学术数据库获取论文 | arXiv, OpenAlex, Semantic Scholar, CORE, Dimensions |
 | **混合检索**    | 精准语义检索             | BM25 + BGE-M3 + BGE-Reranker                        |
-| **Multi-Agent** | 复杂任务自动化           | LangGraph + ReAct 策略                              |
+| **Skills**      | 按需加载的能力单元       | frontmatter 常驻 + 正文/references 渐进披露                    |
+| **记忆与个性化** | 跨会话的用户偏好         | 可配置类别 + 时间衰减 + 负反馈 + BGE-M3 语义召回 + 偏好回流检索 |
 | **实验设计**    | 自动生成实验方案         | LLM + 论文上下文                                    |
 | **学术写作**    | 摘要/引言/方法生成       | DeepSeek/OpenAI API                                 |
 | **LoRA微调**    | 学术写作风格优化         | Qwen2.5 + PEFT                                      |
@@ -19,20 +20,21 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                    ResearchAssistant                        │
 ├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │  Retrieval  │  │ Experiment  │  │   Writing   │         │
-│  │    Agent    │  │    Agent    │  │    Agent    │         │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘         │
-│         └────────────────┼────────────────┘                 │
-│                          ↓                                  │
+│   skills/paper-retrieval    skills/experiment-design         │
+│   skills/academic-writing   （按需加载, 渐进披露）             │
+│         └───────────────┬───────────────┘                    │
+│                         ↓                                    │
 │              ┌───────────────────────┐                      │
-│              │   LangGraph Router    │                      │
-│              │   (ReAct Strategy)    │                      │
+│              │  SkillRegistry 选择    │                      │
+│              │  确定性路由, 0 次 LLM   │                      │
 │              └───────────┬───────────┘                      │
 ├──────────────────────────┼──────────────────────────────────┤
 │  ┌───────────────────────▼───────────────────────┐         │
 │  │           Hybrid Retrieval Engine             │         │
 │  │  BM25 + BGE-M3 → RRF → BGE-Reranker          │         │
+│  └───────────────────────────────────────────────┘         │
+│  ┌───────────────────────────────────────────────┐         │
+│  │  memory/  偏好(可配置类别/衰减/负反馈) + 语义召回 + 偏好回流   │         │
 │  └───────────────────────────────────────────────┘         │
 ├─────────────────────────────────────────────────────────────┤
 │  数据源: arXiv | OpenAlex | Semantic Scholar | CORE        │
@@ -118,14 +120,19 @@ research-assistant --query "battery prediction" --workflow
 ### 运行示例
 
 ```bash
-# 快速入门 (3分钟)
-python examples/01_quick_start.py
+# 论文检索
+python examples/01_paper_retrieval.py
 
-# 高级检索 (HyDE, 方法对比)
-python examples/02_advanced_retrieval.py
+# 实验设计
+python examples/02_experiment_design.py
 
-# 完整科研工作流
-python examples/03_research_workflow.py
+# 学术写作
+python examples/03_academic_writing.py
+
+# 可复现检索评测 / 记忆召回 / 架构度量
+python scripts/eval_retrieval.py --mode bm25
+python scripts/memory_recall_demo.py
+python scripts/measure_refactor.py
 ```
 
 ## 📖 检索流程
@@ -224,8 +231,12 @@ data/
 
 | 文件               | 功能                                       |
 | ------------------ | ------------------------------------------ |
-| `multi_agent.py` | LangGraph状态图，三大Agent协作             |
+| `multi_agent.py` | LangGraph 状态图（**可选后端**）；路由已由 `SkillRegistry` 确定性完成 |
 | `tools.py`       | Agent工具集 (Python执行、统计分析、可视化) |
+
+> 架构说明：原设计的 supervisor LLM 路由已移除，改为 skill 的 frontmatter 索引 +
+  确定性选择（0 次 LLM 调用）。LangGraph 保留用于需要并行/长流程的场景。
+  度量见 `scripts/measure_refactor.py`。
 
 ### 实验与写作
 
@@ -265,12 +276,28 @@ hybrid_retrieval:
 
 ## 📊 性能指标
 
-| 模块            | 指标        | 数值           |
-| --------------- | ----------- | -------------- |
-| 混合检索        | Precision@5 | **89%**  |
-| Multi-Agent     | 任务完成率  | **85%**  |
-| 学术写作 (LoRA) | ROUGE-L     | **0.47** |
-| 学术写作 (LoRA) | 术语准确率  | **89%**  |
+> ⚠️ **本表只收录可由仓库内脚本复现的数字。** 复现：
+> `python scripts/eval_retrieval.py --mode bm25` 与 `python scripts/measure_refactor.py`。
+
+| 模块 | 指标 | 数值 | 复现命令 |
+| --- | --- | --- | --- |
+| 检索 (BM25 基线) | Precision@5 | **55.0%** | `--mode bm25` |
+| 检索 | Recall@5 / Hit@5 / MRR | 87.5% / 100.0% / 0.688 | `--mode bm25` |
+| 记忆召回 | 中文 query 语义相似度 | cos ∈ [0.41, 0.91]（旧实现词重叠恒为 0） | `scripts/memory_recall_demo.py` |
+| 架构 | 常驻上下文 | **851 → 242 token（↓71.6%）** | `scripts/measure_refactor.py` |
+| 架构 | 路由 LLM 调用 | **1 → 0** | `scripts/measure_refactor.py` |
+| 学术写作 (LoRA) | ROUGE-L / 术语准确率 | 待补测 | — |
+
+### ⚠️ 评测集规模警告
+
+`data/eval/retrieval_eval.json` 仅含 **4 条 query**，且 q3/q4 各只标注 1 篇相关文献，
+因此 **Precision@5 的理论上限为 60%**（(1.0+1.0+0.2+0.2)/4）。
+
+任何高于 60% 的 P@5 都**不可能**由当前评测集产生。扩标要求见
+`skills/paper-retrieval/references/evaluation.md`（≥50 条 query、每条 ≥5 篇标注）。
+
+原表曾列 "Precision@5 89% / 任务完成率 85% / ROUGE-L 0.47"，
+这些数字在仓库内**无脚本可复现**，已移除。
 
 ## 🛠️ 技术栈
 

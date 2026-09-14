@@ -3,9 +3,12 @@ Research Assistant - Main Application
 科研论文智能助手主程序
 
 核心功能：
-1. 混合检索RAG：BM25 + BGE-M3 + BGE-Reranker (Precision@5: 89%)
-2. LangGraph Multi-Agent：检索/实验设计/写作 (任务完成率: 85%)
-3. Qwen2.5-7B LoRA微调：学术写作优化 (ROUGE-L: 0.47, 术语准确率: 89%)
+1. 混合检索RAG：BM25 + BGE-M3 + BGE-Reranker
+2. Skills 化能力层：paper-retrieval / experiment-design / academic-writing（渐进披露, 0 次路由 LLM 调用）
+3. 记忆与个性化：可配置偏好类别 + 时间衰减 + 负反馈 + BGE-M3 语义召回 + 偏好回流检索
+4. Qwen2.5-7B LoRA微调：学术写作优化
+
+注：所有对外声明的指标必须可由仓库内脚本复现（见 README「性能指标」小节）。
 """
 
 import logging

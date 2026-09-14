@@ -27,9 +27,21 @@ def test_preferences_isolated_by_user(store):
     assert store.get_preferences("u2")["journal"] == ["JACS"]
 
 
-def test_invalid_preference_category_raises(store):
+def test_unknown_preference_category_autoregisters_by_default(store):
+    """行为变更（v2）：未知类别默认**告警并自动纳入**，而非 `raise ValueError`。
+
+    动机：原实现硬编码 ('journal','keyword','method')，导致"对话中自动归纳新偏好维度"
+    无法实现；严格模式仍可通过 PreferenceSchema(strict=True) 恢复旧行为。
+    """
+    assert store.add_preference("u1", "bogus", "x") is True
+    assert "bogus" in store.schema.categories
+
+
+def test_invalid_preference_category_raises_in_strict_mode(tmp_path):
+    from research_assistant.memory import MemoryStore, PreferenceSchema
+    strict = MemoryStore(str(tmp_path / "strict.db"), schema=PreferenceSchema(strict=True))
     with pytest.raises(ValueError):
-        store.add_preference("u1", "bogus", "x")
+        strict.add_preference("u1", "bogus", "x")
 
 
 def test_add_qa_and_recall_ranks_relevant(store):

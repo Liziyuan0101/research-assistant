@@ -58,11 +58,14 @@ from ..retrieval.memory import format_preferences
 
 
 class AgentType(Enum):
-    """Agent 类型"""
+    """Agent 类型
+
+    注意：``SUPERVISOR`` 已移除。路由不再由 LLM 扮演 supervisor 完成，
+    改为 ``SkillRegistry`` 的确定性选择（0 次 LLM 调用）。
+    """
     RETRIEVAL = "retrieval"
     EXPERIMENT = "experiment"
     WRITING = "writing"
-    SUPERVISOR = "supervisor"
 
 
 if HAS_LANGCHAIN:
@@ -99,24 +102,9 @@ else:
 
 
 # ReAct Prompts
-SUPERVISOR_PROMPT = """你是一个科研助手的任务调度器。根据用户的请求，决定应该由哪个专业Agent来处理：
-
-1. **retrieval** - 论文检索Agent：处理论文搜索、文献综述、相关工作查找
-2. **experiment** - 实验设计Agent：处理实验方案设计、代码生成、数据分析、可视化
-3. **writing** - 写作辅助Agent：处理论文写作、摘要生成、文本润色、引用格式化
-
-对于复杂任务，你可以按顺序调用多个Agent。
-
-当前任务: {task}
-
-请分析任务并返回JSON格式的执行计划：
-{{
-    "task_type": "retrieval|experiment|writing|complex",
-    "agents_sequence": ["agent1", "agent2", ...],
-    "reasoning": "你的分析理由"
-}}
-"""
-
+# 说明：原 SUPERVISOR_PROMPT 已删除 —— 路由改由 SkillRegistry 确定性完成，
+# 不再消耗一次 LLM 调用来"决定派给谁"。三类 Agent 的系统提示保留，
+# 但在 skill 化架构中它们由 skills/*/SKILL.md 的正文按需提供（见 skills/）。
 RETRIEVAL_AGENT_PROMPT = """你是一个专业的学术论文检索专家。你的任务是帮助用户找到相关的学术论文。
 
 你可以使用以下工具：
@@ -183,6 +171,21 @@ Final Answer: 输出写作内容
 请开始你的写作工作。"""
 
 
+#: skill 名 → 图节点类型（dispatch 用）
+_SKILL_TO_TASK_TYPE = {
+    'paper-retrieval': 'retrieval',
+    'experiment-design': 'experiment',
+    'academic-writing': 'writing',
+}
+
+#: skill 名 → ReActAgent 的键（dispatch 把 skill 正文注入对应 Agent）
+_SKILL_TO_AGENT_KEY = {
+    'paper-retrieval': 'retrieval',
+    'experiment-design': 'experiment',
+    'academic-writing': 'writing',
+}
+
+
 class ReActAgent:
     """
     ReAct Agent 基类
@@ -201,14 +204,20 @@ class ReActAgent:
         self.llm = llm
         self.tools = tools
         self.max_iterations = max_iterations
+        #: skill 化后由 SkillLoader 注入的按需上下文（取代固定 system prompt）
+        self.skill_prompt: Optional[str] = None
     
     def get_prompt(self) -> str:
-        """获取Agent的系统提示"""
+        """获取Agent的系统提示。
+
+        优先使用按需加载的 skill 正文（渐进披露）；未注入时回退到内置模板。
+        """
+        if self.skill_prompt:
+            return self.skill_prompt
         prompts = {
             AgentType.RETRIEVAL: RETRIEVAL_AGENT_PROMPT,
             AgentType.EXPERIMENT: EXPERIMENT_AGENT_PROMPT,
             AgentType.WRITING: WRITING_AGENT_PROMPT,
-            AgentType.SUPERVISOR: SUPERVISOR_PROMPT
         }
         return prompts.get(self.agent_type, "")
     
@@ -361,7 +370,8 @@ class ResearchAgentGraph:
     使用 LangGraph 构建多Agent协作流程
     """
     
-    def __init__(self, config: Dict, retriever=None, memory=None, user_id: str = "default"):
+    def __init__(self, config: Dict, retriever=None, memory=None, user_id: str = "default",
+                 skills_dir=None):
         """
         初始化
 
@@ -370,11 +380,18 @@ class ResearchAgentGraph:
             retriever: HybridRetriever 实例
             memory: MemoryStore 实例(可选,用于个性化记忆)
             user_id: 用户标识
+            skills_dir: skill 目录(默认 <repo>/skills)
         """
         self.config = config
         self.retriever = retriever
         self.memory = memory
         self.user_id = user_id
+
+        # skill 注册表与加载器（渐进披露：常驻只有 frontmatter）
+        from ..skills import SkillLoader, SkillRegistry
+        self.registry = SkillRegistry(skills_dir)
+        self.loader = SkillLoader(self.registry)
+        self.hops = 0  # 本次运行的路由跳数（度量 M2）
         
         # 初始化LLM
         llm_config = config.get('llm', {})
@@ -462,19 +479,19 @@ class ResearchAgentGraph:
         # 创建状态图
         workflow = StateGraph(AgentState)
         
-        # 添加节点
-        workflow.add_node("supervisor", self._supervisor_node)
+        # 添加节点（dispatch 取代原 supervisor：确定性 skill 选择，0 次 LLM 调用）
+        workflow.add_node("dispatch", self._dispatch_node)
         workflow.add_node("retrieval", self._retrieval_node)
         workflow.add_node("experiment", self._experiment_node)
         workflow.add_node("writing", self._writing_node)
         workflow.add_node("finalize", self._finalize_node)
         
         # 设置入口
-        workflow.set_entry_point("supervisor")
+        workflow.set_entry_point("dispatch")
         
-        # 添加条件边
+        # dispatch 后按选中的 skill 进入对应节点（单跳）
         workflow.add_conditional_edges(
-            "supervisor",
+            "dispatch",
             self._route_task,
             {
                 "retrieval": "retrieval",
@@ -509,77 +526,65 @@ class ResearchAgentGraph:
         
         return workflow.compile()
     
-    def _supervisor_node(self, state: AgentState) -> AgentState:
-        """Supervisor节点：分析任务并决定路由"""
+    def _dispatch_node(self, state: AgentState) -> AgentState:
+        """确定性分发节点（取代原 supervisor）。
+
+        旧实现：调用 LLM 生成 JSON 执行计划 → 解析 → 路由（1 次 LLM 调用 + 易解析失败）。
+        新实现：``SkillRegistry`` 按 skill frontmatter 的词元覆盖率打分选 skill。
+        **0 次 LLM 调用**，且选择结果可解释、可复现。
+
+        与旧实现的能力对齐：支持一条任务命中多个 skill（原 ``task_type == 'complex'``
+        的串行链式能力）；未命中任何 skill 时回退到检索并在 trace 中标注。
+        """
         task = state['task']
-        
-        # 使用LLM分析任务类型
-        if self.llm:
-            prompt = SUPERVISOR_PROMPT.format(task=task)
-            response = self.llm.invoke([HumanMessage(content=prompt)])
-            
-            try:
-                # 解析JSON响应
-                response_text = response.content
-                json_start = response_text.find('{')
-                json_end = response_text.rfind('}') + 1
-                if json_start != -1 and json_end > json_start:
-                    plan = json.loads(response_text[json_start:json_end])
-                    state['task_type'] = plan.get('task_type', 'retrieval')
-                else:
-                    state['task_type'] = self._simple_task_classification(task)
-            except:
-                state['task_type'] = self._simple_task_classification(task)
-        else:
-            state['task_type'] = self._simple_task_classification(task)
-        
+        metas = self.registry.select(task, top_k=3)
+        state['skills'] = [m.name for m in metas]
+        state['task_type'] = _SKILL_TO_TASK_TYPE.get(metas[0].name, 'retrieval') if metas else 'retrieval'
+        state['skill_queue'] = list(state['skills'][1:])
+
+        self.hops += 1  # 路由跳数：一次即完成（旧实现在这里就是一次 LLM 调用）
+        state['route_hops'] = self.hops
+        state['resident_chars'] = self.registry.resident_chars()
+        state['llm_calls_for_routing'] = 0
+
+        # 渐进披露：只为选中的 skill 加载正文，并注入为该 Agent 的 system prompt
+        for m in metas:
+            body = self.loader.load(m.name)
+            if body is None:
+                continue
+            key = _SKILL_TO_AGENT_KEY.get(m.name)
+            if key and key in self.agents:
+                self.agents[key].skill_prompt = body.body
+            state['skill_prompt_chars'] = (state.get('skill_prompt_chars', 0) + body.chars)
+
+        logger.info("dispatch: task=%r -> skills=%s (0 LLM calls)", task[:40], state['skills'])
         return state
     
-    def _simple_task_classification(self, task: str) -> str:
-        """简单的任务分类"""
-        task_lower = task.lower()
-        
-        retrieval_keywords = ['搜索', '检索', '查找', '论文', 'search', 'find', 'paper', 'literature']
-        experiment_keywords = ['实验', '分析', '代码', '数据', 'experiment', 'analysis', 'code', 'data']
-        writing_keywords = ['写', '摘要', '润色', '引用', 'write', 'abstract', 'polish', 'citation']
-        
-        if any(kw in task_lower for kw in retrieval_keywords):
-            return 'retrieval'
-        elif any(kw in task_lower for kw in experiment_keywords):
-            return 'experiment'
-        elif any(kw in task_lower for kw in writing_keywords):
-            return 'writing'
-        else:
-            return 'retrieval'  # 默认先检索
-    
     def _route_task(self, state: AgentState) -> str:
-        """路由任务到对应Agent"""
+        """（保留条件边契约）按 dispatch 选出的 skill 进入对应节点。"""
         task_type = state.get('task_type', 'retrieval')
-        
-        if task_type == 'complex':
-            return 'retrieval'  # 复杂任务从检索开始
-        elif task_type in ['retrieval', 'experiment', 'writing']:
+        if task_type in ('retrieval', 'experiment', 'writing'):
             return task_type
-        else:
-            return 'retrieval'
+        return 'end'
     
     def _check_next_agent(self, state: AgentState) -> str:
-        """检查是否需要调用下一个Agent"""
-        task_type = state.get('task_type', '')
-        current = state.get('current_agent', '')
+        """检查是否需要调用下一个Agent。
+
+        新实现不再依赖 ``task_type == 'complex'`` 的硬编码串行顺序，
+        而是消费 dispatch 阶段排好序的 ``skill_queue``（按相关度降序）。
+        """
         iteration = state.get('iteration', 0)
         max_iter = state.get('max_iterations', 10)
-        
         if iteration >= max_iter:
             return 'end'
-        
-        if task_type == 'complex':
-            # 复杂任务按顺序执行
-            if current == 'retrieval':
-                return 'experiment'
-            elif current == 'experiment':
-                return 'writing'
-        
+
+        queue = state.get('skill_queue') or []
+        while queue:
+            nxt = queue.pop(0)
+            if nxt in self.agents:
+                state['task_type'] = _SKILL_TO_TASK_TYPE.get(nxt, 'retrieval')
+                return nxt if nxt == 'retrieval' else state['task_type']
+
         return 'end'
     
     def _retrieval_node(self, state: AgentState) -> AgentState:
@@ -685,6 +690,10 @@ class ResearchAgentGraph:
         Returns:
             执行结果
         """
+        # 重置度量计数器（M2 路由跳数 / M1 上下文加载量）
+        self.hops = 0
+        self.loader.reset_meter()
+
         # 个性化:注入用户科研偏好(软个性化)
         if self.memory:
             pref_text = format_preferences(self.memory.get_preferences(self.user_id))
@@ -697,6 +706,10 @@ class ResearchAgentGraph:
             'current_agent': '',
             'task': task,
             'task_type': '',
+            'skills': [],
+            'skill_queue': [],
+            'route_hops': 0,
+            'resident_chars': 0,
             'retrieved_papers': [],
             'experiment_plan': None,
             'draft_content': '',
@@ -715,11 +728,18 @@ class ResearchAgentGraph:
                     'success': True,
                     'task': task,
                     'task_type': final_state.get('task_type'),
+                    'skills': final_state.get('skills', []),
                     'iterations': final_state.get('iteration'),
                     'retrieved_papers': final_state.get('retrieved_papers', []),
                     'experiment_plan': final_state.get('experiment_plan'),
                     'final_output': final_state.get('final_output'),
                     'tool_outputs': final_state.get('tool_outputs', [])
+                }
+                result['routing'] = {
+                    'hops': final_state.get('route_hops', 0),
+                    'llm_calls_for_routing': 0,
+                    'resident_chars': final_state.get('resident_chars', 0),
+                    'skill_prompt_chars': final_state.get('skill_prompt_chars', 0),
                 }
             except Exception as e:
                 result = {
@@ -731,6 +751,10 @@ class ResearchAgentGraph:
             # 降级：直接调用单个Agent
             result = self._fallback_run(task)
 
+        result.setdefault('routing', {})
+        result['routing'].update(self.loader.stats())
+        result['routing']['hops'] = self.hops
+
         # 记录问答到长期记忆
         if self.memory:
             answer = result.get('final_output') or result.get('error', '')
@@ -739,19 +763,30 @@ class ResearchAgentGraph:
         return result
     
     def _fallback_run(self, task: str) -> Dict:
-        """降级执行（不使用LangGraph）"""
-        task_type = self._simple_task_classification(task)
-        
+        """降级执行（不使用 LangGraph）。
+
+        用 ``SkillRegistry`` 取代已删除的 ``_simple_task_classification``：
+        同样 0 次 LLM 调用，但选择依据来自 skill 的 frontmatter 而非硬编码关键词表。
+        """
+        metas = self.registry.select(task, top_k=1)
+        skill_name = metas[0].name if metas else None
+        task_type = _SKILL_TO_TASK_TYPE.get(skill_name, 'retrieval')
+
         if task_type in self.agents:
+            body = self.loader.load(skill_name) if skill_name else None
+            if body is not None:
+                self.agents[task_type].skill_prompt = body.body
+            self.hops += 1
             result = self.agents[task_type].run(task, {})
             return {
                 'success': result.get('success', False),
                 'task': task,
                 'task_type': task_type,
+                'skills': [skill_name] if skill_name else [],
                 'final_output': result.get('final_answer'),
                 'tool_outputs': result.get('tool_outputs', [])
             }
-        
+
         return {
             'success': False,
             'task': task,

@@ -1,0 +1,68 @@
+{
+  "history": [
+    "锂离子电池剩余寿命预测方法",
+    "退役电池梯次利用筛选策略",
+    "图神经网络在电池早期寿命预测中的应用",
+    "深度学习在电力系统负荷预测中的应用",
+    "学术论文摘要的自动生成方法"
+  ],
+  "queries": [
+    {
+      "query": "电池剩余寿命预测",
+      "lexical_top1": "锂离子电池剩余寿命预测方法",
+      "lexical_overlaps": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "lexical_degenerate": true,
+      "semantic_top1": "锂离子电池剩余寿命预测方法",
+      "semantic_scores": [
+        0.9082943201065063,
+        0.70062255859375,
+        0.6024072766304016,
+        0.5523742437362671,
+        0.4060559868812561
+      ]
+    },
+    {
+      "query": "remaining useful life prediction of lithium-ion batteries",
+      "lexical_top1": "锂离子电池剩余寿命预测方法",
+      "lexical_overlaps": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "lexical_degenerate": true,
+      "semantic_top1": "锂离子电池剩余寿命预测方法",
+      "semantic_scores": [
+        0.763969361782074,
+        0.6311194896697998,
+        0.5583376884460449,
+        0.5204940438270569,
+        0.4066098928451538
+      ]
+    }
+  ],
+  "store_stats": {
+    "preferences_stored": 5,
+    "preferences_positive": 4,
+    "preferences_negative": 1,
+    "preferences_alive": 4,
+    "qa_total": 2,
+    "qa_success": 1,
+    "categories": [
+      "journal",
+      "keyword",
+      "method",
+      "dataset",
+      "style",
+      "custom_dim"
+    ]
+  },
+  "recall_backend": "semantic"
+}
