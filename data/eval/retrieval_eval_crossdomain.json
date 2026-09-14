@@ -1,0 +1,724 @@
+{
+ "samples": [
+  {
+   "query_id": "q01_T10663",
+   "query": "how to estimate the remaining useful life of lithium-ion batteries",
+   "relevant_paper_ids": [
+    "W2100248299",
+    "W3008891024",
+    "W2052909548",
+    "W2146528637",
+    "W2414929806",
+    "W3127891378",
+    "W2417460170",
+    "W2973538758",
+    "W2116064024",
+    "W4253271002",
+    "W2809502094",
+    "W3010408268"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "电池/能源",
+    "topic_id": "T10663"
+   }
+  },
+  {
+   "query_id": "q02_T10223",
+   "query": "control and optimization of microgrid energy storage systems",
+   "relevant_paper_ids": [
+    "W2127086830",
+    "W2163501722",
+    "W2207798671",
+    "W1994440383",
+    "W2108326722",
+    "W2139033201",
+    "W106711868",
+    "W2765056174",
+    "W2124836123",
+    "W2130055347",
+    "W2047617506",
+    "W2006246155"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "电池/能源",
+    "topic_id": "T10223"
+   }
+  },
+  {
+   "query_id": "q03_T12737",
+   "query": "fault detection and diagnosis in photovoltaic power systems",
+   "relevant_paper_ids": [
+    "W2914798213",
+    "W2056971012",
+    "W2140036717",
+    "W3177367985",
+    "W2158529944",
+    "W2593392134",
+    "W2572569838",
+    "W2060976371",
+    "W3138948977",
+    "W2051193921",
+    "W2157060392",
+    "W2585885232"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "电池/能源",
+    "topic_id": "T12737"
+   }
+  },
+  {
+   "query_id": "q04_T10305",
+   "query": "stability analysis and optimization of smart power grids",
+   "relevant_paper_ids": [
+    "W2150778332",
+    "W2277817011",
+    "W2050595415",
+    "W2149624137",
+    "W1578978182",
+    "W2023976076",
+    "W2155978258",
+    "W2116279256",
+    "W2106007600",
+    "W2169820422",
+    "W2144048072",
+    "W1965146257"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "电池/能源",
+    "topic_id": "T10305"
+   }
+  },
+  {
+   "query_id": "q05_T10030",
+   "query": "electrocatalysts for hydrogen fuel cell energy conversion",
+   "relevant_paper_ids": [
+    "W2115729799",
+    "W2323275360",
+    "W2040634925",
+    "W2085020302",
+    "W2502288548",
+    "W2030228841",
+    "W1970814724",
+    "W2073872893",
+    "W1996162207",
+    "W2076968595",
+    "W2167035995",
+    "W2069506896"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "电池/能源",
+    "topic_id": "T10030"
+   }
+  },
+  {
+   "query_id": "q06_T10175",
+   "query": "design of DC-DC converters for electric vehicle charging",
+   "relevant_paper_ids": [
+    "W2166463708",
+    "W2119199553",
+    "W4245879290",
+    "W2154015682",
+    "W4246862236",
+    "W2117362136",
+    "W1573847156",
+    "W2133909009",
+    "W2098239527",
+    "W2145047138",
+    "W2153466000",
+    "W2593065393"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "电池/能源",
+    "topic_id": "T10175"
+   }
+  },
+  {
+   "query_id": "q07_T11052",
+   "query": "probabilistic forecasting of electricity load demand",
+   "relevant_paper_ids": [
+    "W2156636680",
+    "W3090661556",
+    "W2146588145",
+    "W2049751389",
+    "W2743680082",
+    "W2067576900",
+    "W2071258353",
+    "W4281572064",
+    "W2038127554",
+    "W2597866042",
+    "W2101457442",
+    "W2809317444"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "时序预测",
+    "topic_id": "T11052"
+   }
+  },
+  {
+   "query_id": "q08_T11326",
+   "query": "deep learning methods for stock market price forecasting",
+   "relevant_paper_ids": [
+    "W2122030147",
+    "W2799635155",
+    "W2015393497",
+    "W2997421965",
+    "W2586702902",
+    "W2111440106",
+    "W406650945",
+    "W2015174807",
+    "W2017954768",
+    "W4298110867",
+    "W4382175553",
+    "W3081799531"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "时序预测",
+    "topic_id": "T11326"
+   }
+  },
+  {
+   "query_id": "q09_T11344",
+   "query": "traffic flow prediction with spatio-temporal deep learning",
+   "relevant_paper_ids": [
+    "W2802508687",
+    "W3135400423",
+    "W2996451395",
+    "W3034944009",
+    "W2165991108",
+    "W2132711183",
+    "W1982978808",
+    "W2896827527",
+    "W1559240825",
+    "W2613331518",
+    "W2573587735",
+    "W4388936714"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "时序预测",
+    "topic_id": "T11344"
+   }
+  },
+  {
+   "query_id": "q10_T11512",
+   "query": "anomaly detection in multivariate time series data",
+   "relevant_paper_ids": [
+    "W3004207920",
+    "W1998399571",
+    "W4366988472",
+    "W2069401973",
+    "W2244501064",
+    "W3135550350",
+    "W2906498146",
+    "W1995443851",
+    "W2337344967",
+    "W1552339598",
+    "W2164261375",
+    "W2015887370"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "时序预测",
+    "topic_id": "T11512"
+   }
+  },
+  {
+   "query_id": "q11_T10181",
+   "query": "large language model fine-tuning for downstream NLP tasks",
+   "relevant_paper_ids": [
+    "W2169818249",
+    "W1967461618",
+    "W1535015163",
+    "W1574901103",
+    "W222053410",
+    "W1579838312",
+    "W2952230511",
+    "W2154652894",
+    "W600197013",
+    "W2081580037",
+    "W2117400858",
+    "W2006969979"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "NLP/LLM",
+    "topic_id": "T10181"
+   }
+  },
+  {
+   "query_id": "q12_T10664",
+   "query": "sentiment analysis of user reviews and social media text",
+   "relevant_paper_ids": [
+    "W3146306708",
+    "W2584429674",
+    "W2253519362",
+    "W2941799245",
+    "W2063596712",
+    "W3088107006",
+    "W2168625136",
+    "W1572786359",
+    "W2048529682",
+    "W2124156373",
+    "W2401379394",
+    "W3011570378"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "NLP/LLM",
+    "topic_id": "T10664"
+   }
+  },
+  {
+   "query_id": "q13_T13910",
+   "query": "computational text analysis with transformer models",
+   "relevant_paper_ids": [
+    "W2607618454",
+    "W2769563773",
+    "W2096974619",
+    "W2769358515",
+    "W2805117413",
+    "W2171380100",
+    "W2146016545",
+    "W4232519079",
+    "W2584924584",
+    "W3125733373",
+    "W2409811014",
+    "W2778001237"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "NLP/LLM",
+    "topic_id": "T13910"
+   }
+  },
+  {
+   "query_id": "q14_T13523",
+   "query": "retrieval augmented generation for open domain question answering",
+   "relevant_paper_ids": [
+    "W2072783781",
+    "W2137228252",
+    "W1577443714",
+    "W2015348757",
+    "W2076071607",
+    "W114126034",
+    "W2096975829",
+    "W2601846890",
+    "W1995723876",
+    "W2066195341",
+    "W68670080",
+    "W2418123089"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "NLP/LLM",
+    "topic_id": "T13523"
+   }
+  },
+  {
+   "query_id": "q15_T10203",
+   "query": "collaborative filtering for personalized recommender systems",
+   "relevant_paper_ids": [
+    "W2210543184",
+    "W2111094216",
+    "W2119523409",
+    "W2153578526",
+    "W2159094788",
+    "W2003274231",
+    "W2112929667",
+    "W2040974535",
+    "W4205390421",
+    "W2341865734",
+    "W3097300053",
+    "W2008886893"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "检索推荐",
+    "topic_id": "T10203"
+   }
+  },
+  {
+   "query_id": "q16_T11273",
+   "query": "graph neural networks for node classification and link prediction",
+   "relevant_paper_ids": [
+    "W2925177113",
+    "W2907492528",
+    "W2962810718",
+    "W2111557120",
+    "W2811124557",
+    "W103340358",
+    "W2951105272",
+    "W3129850062",
+    "W4386443326",
+    "W2911738047",
+    "W3120491054",
+    "W2161763921"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "图模型/ML",
+    "topic_id": "T11273"
+   }
+  },
+  {
+   "query_id": "q17_T10036",
+   "query": "novel neural network architectures for representation learning",
+   "relevant_paper_ids": [
+    "W2130306094",
+    "W4320002812",
+    "W2910094941",
+    "W2965658867",
+    "W3100777112",
+    "W2168356304",
+    "W3168997536",
+    "W3140854437",
+    "W3175515048",
+    "W2183182206",
+    "W2109255472",
+    "W2301358467"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "图模型/ML",
+    "topic_id": "T10036"
+   }
+  },
+  {
+   "query_id": "q18_T10462",
+   "query": "reinforcement learning for robot control and manipulation",
+   "relevant_paper_ids": [
+    "W2113501460",
+    "W4297964528",
+    "W2107726111",
+    "W1595483645",
+    "W2155027007",
+    "W2746553466",
+    "W4414281281",
+    "W2810602713",
+    "W2110001365",
+    "W2099618002",
+    "W2156666755",
+    "W1977655452"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "图模型/ML",
+    "topic_id": "T10462"
+   }
+  },
+  {
+   "query_id": "q19_T12549",
+   "query": "real-time object detection in natural images",
+   "relevant_paper_ids": [
+    "W2146755476",
+    "W2146733066",
+    "W2010016312",
+    "W2069853858",
+    "W2158695700",
+    "W1986277058",
+    "W2015975137",
+    "W1554544485",
+    "W2096600681",
+    "W2154741421",
+    "W1981154266",
+    "W2171124048"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "视觉",
+    "topic_id": "T12549"
+   }
+  },
+  {
+   "query_id": "q20_T10052",
+   "query": "deep learning based medical image segmentation",
+   "relevant_paper_ids": [
+    "W2124260943",
+    "W195739245",
+    "W2162837059",
+    "W2149184914",
+    "W2145023731",
+    "W2115242586",
+    "W2071881327",
+    "W2059784307",
+    "W2060945009",
+    "W2116040950",
+    "W2156875677",
+    "W2131372145"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "视觉",
+    "topic_id": "T10052"
+   }
+  },
+  {
+   "query_id": "q21_T10191",
+   "query": "point cloud processing for 3D scene understanding",
+   "relevant_paper_ids": [
+    "W2097543505",
+    "W3040777582",
+    "W3106458387",
+    "W2056898157",
+    "W4319866011",
+    "W2041094000",
+    "W2474281075",
+    "W1990012555",
+    "W2482726005",
+    "W2130422193",
+    "W2117007522",
+    "W3124420883"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "视觉",
+    "topic_id": "T10191"
+   }
+  },
+  {
+   "query_id": "q22_T11948",
+   "query": "machine learning for predicting material properties",
+   "relevant_paper_ids": [
+    "W1978659336",
+    "W2766033847",
+    "W2197007850",
+    "W2742127985",
+    "W2527189750",
+    "W3034412283",
+    "W2968923792",
+    "W2104489082",
+    "W2106824077",
+    "W4377694431",
+    "W4389132751",
+    "W2288102383"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "材料/健康",
+    "topic_id": "T11948"
+   }
+  },
+  {
+   "query_id": "q23_T10534",
+   "query": "structural health monitoring of civil infrastructure",
+   "relevant_paper_ids": [
+    "W2157532773",
+    "W2120356561",
+    "W2160502247",
+    "W1595848081",
+    "W2003449296",
+    "W2055738215",
+    "W1656714824",
+    "W2011309176",
+    "W3016123475",
+    "W1993460282",
+    "W2038030613",
+    "W2045831595"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "材料/健康",
+    "topic_id": "T10534"
+   }
+  },
+  {
+   "query_id": "q24_T10044",
+   "query": "protein structure prediction and molecular dynamics",
+   "relevant_paper_ids": [
+    "W2131288855",
+    "W2128572087",
+    "W2041189078",
+    "W2102245393",
+    "W2162166182",
+    "W2160544821",
+    "W2019481672",
+    "W2118233996",
+    "W2015642465",
+    "W2147421370",
+    "W2069123478",
+    "W2027408247"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "材料/健康",
+    "topic_id": "T10044"
+   }
+  },
+  {
+   "query_id": "q25_T10876",
+   "query": "industrial process fault detection and diagnosis",
+   "relevant_paper_ids": [
+    "W2150005359",
+    "W2166042538",
+    "W2100028154",
+    "W2089662726",
+    "W3149745985",
+    "W2095683621",
+    "W2113556584",
+    "W2980070341",
+    "W1597576211",
+    "W2066260126",
+    "W2126455177",
+    "W1982182688"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "工业/供应链",
+    "topic_id": "T10876"
+   }
+  },
+  {
+   "query_id": "q26_T10328",
+   "query": "demand forecasting and inventory optimization in supply chains",
+   "relevant_paper_ids": [
+    "W2027923584",
+    "W2040198418",
+    "W2123594576",
+    "W2157443709",
+    "W2100951624",
+    "W1968490935",
+    "W2041015216",
+    "W3124271238",
+    "W2149035559",
+    "W2089762011",
+    "W2161297030",
+    "W2165691491"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "工业/供应链",
+    "topic_id": "T10328"
+   }
+  },
+  {
+   "query_id": "q27_T10764",
+   "query": "federated learning for privacy-preserving machine learning",
+   "relevant_paper_ids": [
+    "W3090615085",
+    "W2119047901",
+    "W2128906841",
+    "W2974429275",
+    "W3016632787",
+    "W3124443940",
+    "W3155912831",
+    "W2112022568",
+    "W3046653923",
+    "W3133814152",
+    "W2963318081",
+    "W2912213068"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "安全/隐私",
+    "topic_id": "T10764"
+   }
+  },
+  {
+   "query_id": "q28_T10400",
+   "query": "intrusion detection in computer networks",
+   "relevant_paper_ids": [
+    "W2104692292",
+    "W1775772884",
+    "W2018992824",
+    "W2011778831",
+    "W2081357650",
+    "W1941427975",
+    "W2980576170",
+    "W1988918299",
+    "W4382281941",
+    "W2085305295",
+    "W1977867261",
+    "W2162969618"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "安全/隐私",
+    "topic_id": "T10400"
+   }
+  },
+  {
+   "query_id": "q29_T10201",
+   "query": "end-to-end automatic speech recognition",
+   "relevant_paper_ids": [
+    "W1557133539",
+    "W2171850596",
+    "W2123585936",
+    "W2150769028",
+    "W1524333225",
+    "W2158289097",
+    "W2077804127",
+    "W2006633963",
+    "W1995562189",
+    "W1560013842",
+    "W4252331534",
+    "W2112844139"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "语音/机器人",
+    "topic_id": "T10201"
+   }
+  },
+  {
+   "query_id": "q30_T10653",
+   "query": "learning-based robot manipulation and grasping",
+   "relevant_paper_ids": [
+    "W2282481780",
+    "W2048058874",
+    "W2993247505",
+    "W2100790457",
+    "W2115659120",
+    "W2146055337",
+    "W2120591602",
+    "W2016958754",
+    "W2007924815",
+    "W1510186039",
+    "W2144573888",
+    "W2102279668"
+   ],
+   "source": "openalex primary_topic (自动标签)",
+   "difficulty": "auto",
+   "metadata": {
+    "domain": "语音/机器人",
+    "topic_id": "T10653"
+   }
+  }
+ ]
+}

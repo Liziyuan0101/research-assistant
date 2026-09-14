@@ -1,0 +1,29 @@
+{
+  "_doc": "个性化检索评测用的偏好画像。'positive'/'negative' 是可被 BGE-M3 编码的文本。可自行增删。",
+  "profiles": {
+    "battery_research": {
+      "label": "本人真实科研画像（退役电池早期寿命预测 / 层次贝叶斯 / PINN）",
+      "expectation": "与评测语料同域，先验应带来正向增益",
+      "positive": [
+        "remaining useful life prediction of lithium-ion batteries",
+        "state of health estimation of lithium-ion batteries",
+        "Bayesian deep learning for uncertainty quantification",
+        "physics-informed neural network for battery degradation modelling",
+        "hierarchical Bayesian model for battery lifetime early prediction",
+        "graph neural network for early life prediction"
+      ],
+      "negative": [
+        "purely empirical curve fitting without physical interpretation"
+      ]
+    },
+    "off_domain_control": {
+      "label": "对照组：与语料无关的偏好",
+      "expectation": "用来检验先验是否会引入噪声；若此处也大涨，说明指标不可信",
+      "positive": [
+        "natural language processing sentiment analysis of social media posts",
+        "recommender system for e-commerce click-through rate prediction"
+      ],
+      "negative": []
+    }
+  }
+}

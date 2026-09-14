@@ -27,6 +27,16 @@ embedding:
   device: "cpu"
   batch_size: 32
 
+# 记忆与个性化
+personalization:
+  # 偏好回流检索打分先验的强度 λ（0 = 关闭个性化；建议 0.1–0.3）
+  # final_score = (1-λ)·minmax(检索分) + λ·minmax(偏好相似度)
+  lambda: 0.0
+  # 偏好类别（可按需扩展；未列入的类别默认告警并自动登记）
+  preference_categories: [journal, keyword, method, dataset, style]
+  half_life_days: 90      # 偏好权重衰减半衰期
+  max_weight: 10.0        # 单条偏好权重上限
+
 # Vector Database
 vector_db:
   type: "faiss"  # faiss, chromadb

@@ -13,7 +13,7 @@ import json
 import random
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple, Any
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, fields
 from datetime import datetime
 import numpy as np
 
@@ -112,18 +112,32 @@ class RetrievalEvaluator:
             self.load_eval_data(eval_data_path)
     
     def load_eval_data(self, path: str):
-        """加载评测数据"""
-        try:
-            with open(path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            self.eval_samples = [
-                EvalSample(**sample) for sample in data.get('samples', [])
-            ]
-            logger.info(f"📂 Loaded {len(self.eval_samples)} evaluation samples")
-        except Exception as e:
-            logger.error(f"❌ Error loading eval data: {e}")
-    
+        """加载评测数据。
+
+        未知字段会被并入 ``EvalSample.metadata``，而不是抛
+        ``TypeError: unexpected keyword argument`` —— 允许评测集携带
+        ``domain`` / ``topic_id`` 等分析用元信息（跨域消融按域分组需要）。
+
+        加载失败**直接抛出**：原来只 log 不 raise，会让 eval_samples 静默为空，
+        下游再以 KeyError 的形式炸在别处，极难定位。
+        """
+        known = {f.name for f in fields(EvalSample)}
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        samples = []
+        for raw in data.get('samples', []):
+            extra = {k: v for k, v in raw.items() if k not in known}
+            kwargs = {k: v for k, v in raw.items() if k in known}
+            if extra:
+                merged = dict(kwargs.get('metadata') or {})
+                merged.update(extra)
+                kwargs['metadata'] = merged
+            samples.append(EvalSample(**kwargs))
+
+        self.eval_samples = samples
+        logger.info(f"📂 Loaded {len(self.eval_samples)} evaluation samples from {path}")
+
     def save_eval_data(self, path: str):
         """保存评测数据"""
         try:
@@ -785,6 +799,103 @@ def evaluate_hybrid_retrieval(corpus_path: str, eval_path: str, k_values=(1, 3, 
 
     evaluator = RetrievalEvaluator(eval_path)
     return evaluator.evaluate_retriever(_Wrapper(retriever), k_values=list(k_values), verbose=False)
+
+
+def evaluate_personalized_retrieval(
+    corpus_path: str,
+    eval_path: str,
+    preferences: Optional[List[str]] = None,
+    negative_preferences: Optional[List[str]] = None,
+    lam: float = 0.2,
+    k_values=(1, 3, 5),
+    model_name: str = 'BAAI/bge-m3',
+    encoder=None,
+    prior_mode: str = 'boost',
+) -> Dict:
+    """个性化检索评测：BM25 基线 + 偏好先验回流（消融用）。
+
+    与 :func:`evaluate_bm25_retrieval` 使用**同一套 corpus / query / 指标**，
+    唯一变量是偏好先验，因此 ``lam=0`` 与 ``lam>0`` 的差值就是"记忆带来的净增益"。
+
+    ``lam = 0`` 时**不会加载编码器**，因此基线可完全离线复现。
+
+    Args:
+        preferences: 正向偏好文本（如 ``['Battery RUL prediction', 'Bayesian deep learning']``）。
+        negative_preferences: 负向偏好文本，从分数中扣除。
+        lam: 先验混合权重 ``λ``。
+        encoder: 复用外部编码器（避免重复加载模型）。
+    """
+    from rank_bm25 import BM25Okapi
+    from ..utils.helpers import tokenize
+    from ..memory.encoder import SemanticEncoder
+    from ..memory.personalize import PreferenceProfile, preference_prior
+
+    corpus = json.loads(Path(corpus_path).read_text(encoding='utf-8'))
+    paper_ids = [p['id'] for p in corpus]
+    texts = [f"Title: {p['title']}\n\nAbstract: {p.get('abstract', '')}" for p in corpus]
+    index = BM25Okapi([tokenize(t) for t in texts])
+
+    # lam=0 时跳过编码器加载，保证纯离线基线可复现
+    profile = PreferenceProfile(user_id='eval')
+    active_encoder = None
+    if lam > 0 and preferences:
+        active_encoder = encoder or SemanticEncoder(model_name=model_name)
+        if not active_encoder.available:
+            raise RuntimeError(
+                'lam > 0 需要语义编码器，但 sentence-transformers / BAAI/bge-m3 不可用；'
+                '请改用 --lam 0 或先安装依赖。'
+            )
+        pos = list(preferences)
+        neg = list(negative_preferences or [])
+        pv = active_encoder.encode(pos)
+        if pv is not None and len(pv):
+            v = pv.mean(axis=0)
+            profile.pos_vector = v / (np.linalg.norm(v) + 1e-12)
+            profile.positive_texts = pos
+        if neg:
+            nv = active_encoder.encode(neg)
+            if nv is not None and len(nv):
+                v = nv.mean(axis=0)
+                profile.neg_vector = v / (np.linalg.norm(v) + 1e-12)
+                profile.negative_texts = neg
+        profile.backend = 'semantic' if not profile.is_empty else 'empty'
+
+    class _PersonalizedRetriever:
+        def __init__(self, lam, profile, encoder, prior_mode):
+            self.lam = lam
+            self.profile = profile
+            self.encoder = encoder
+            self.prior_mode = prior_mode
+            self.last_scores = None
+
+        def search(self, query, top_k=5):
+            effective_query = query
+            if self.prior_mode == 'expand' and self.lam > 0 and self.profile.positive_texts:
+                # 查询侧个性化：把偏好并入查询，使"同域但方法不同"的文档被区分开。
+                effective_query = query + ' ' + ' '.join(self.profile.positive_texts)
+            base = np.asarray(index.get_scores(tokenize(effective_query)), dtype='float32')
+            if self.prior_mode == 'boost' and self.lam > 0 and not self.profile.is_empty:
+                scores = preference_prior(self.profile, texts, self.encoder, lam=self.lam,
+                                          base_scores=base)
+            elif self.prior_mode == 'tiebreak' and self.lam > 0 and not self.profile.is_empty:
+                scores = preference_prior(self.profile, texts, self.encoder, lam=self.lam,
+                                          base_scores=base, mode='tiebreak')
+            else:
+                scores = base
+            self.last_scores = scores
+            top = np.argsort(scores)[::-1][:top_k]
+            return [{'paper': {'paper_id': paper_ids[i]}, 'score': float(scores[i])}
+                    for i in top]
+
+    evaluator = RetrievalEvaluator(eval_path)
+    summary = evaluator.evaluate_retriever(
+        _PersonalizedRetriever(lam, profile, active_encoder, prior_mode),
+        k_values=list(k_values), verbose=False,
+    )
+    summary['lam'] = lam
+    summary['prior_mode'] = prior_mode
+    summary['profile'] = profile.summary()
+    return summary
 
 
 if __name__ == "__main__":

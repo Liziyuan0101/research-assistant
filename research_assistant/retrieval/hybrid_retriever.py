@@ -419,7 +419,15 @@ class HybridRetriever:
         # 延迟加载模型
         self._bge_model = None
         self._reranker = None
-        
+        #: sentence-transformers 回退编码器（FlagEmbedding 不可用时使用同一份 BGE-M3 权重）
+        self._st_encoder_obj = None
+        #: Reranker 权重加载失败后不再重试（离线环境下会反复抛 OSError）
+        self._reranker_failed = False
+        #: 最近一次检索是否跳过了精排（供 last_search_meta 如实上报）
+        self._last_rerank_skipped = False
+        #: 最近一次检索的后端/个性化元信息（供上层如实汇报降级情况）
+        self.last_search_meta: Dict = {}
+
         # BM25索引
         self._bm25_index = None
         self._bm25_corpus = []  # 分词后的语料
@@ -438,9 +446,11 @@ class HybridRetriever:
         if self._bge_model is None:
             if not HAS_BGE:
                 raise ImportError("FlagEmbedding not installed")
+            # fp16 只在 CUDA 上开：CPU 上 half 精度算子缺失会直接报错
+            use_fp16 = str(self.device).startswith('cuda')
             self._bge_model = BGEM3FlagModel(
                 self.bge_model_name,
-                use_fp16=True,
+                use_fp16=use_fp16,
                 device=self.device
             )
         return self._bge_model
@@ -451,13 +461,55 @@ class HybridRetriever:
         if self._reranker is None:
             if not HAS_BGE:
                 raise ImportError("FlagEmbedding not installed")
+            # 同上：fp16 只在 CUDA 上开
+            use_fp16 = str(self.device).startswith('cuda')
             self._reranker = FlagReranker(
                 self.reranker_model_name,
-                use_fp16=True,
+                use_fp16=use_fp16,
                 device=self.device
             )
         return self._reranker
-    
+
+    # ------------------------------------------------------------ 稠密编码
+    @property
+    def dense_available(self) -> bool:
+        """稠密检索是否可用（FlagEmbedding 或 sentence-transformers 任一）。不触发模型加载。"""
+        if HAS_BGE:
+            return True
+        try:
+            import sentence_transformers  # noqa: F401
+            return True
+        except ImportError:
+            return False
+
+    def _st_encoder(self):
+        """sentence-transformers 编码器（懒加载，与 memory/ 共用同一份 BGE-M3 权重）。"""
+        if self._st_encoder_obj is None:
+            from ..memory.encoder import SemanticEncoder
+            use_gpu = self.device not in ('cpu',)
+            self._st_encoder_obj = SemanticEncoder(
+                self.bge_model_name,
+                device='cuda' if use_gpu else None,
+                offline=True,
+            )
+        return self._st_encoder_obj
+
+    def _encode_dense(self, texts: List[str]) -> np.ndarray:
+        """统一的稠密编码入口。
+
+        优先 FlagEmbedding（项目原始依赖）；缺失时回退 sentence-transformers ——
+        两者用**同一份** BAAI/bge-m3 权重，因此检索向量与 memory/ 的偏好向量处于
+        同一空间，偏好先验可以直接作用到检索打分上（这正是个性化能生效的前提）。
+        """
+        if HAS_BGE:
+            out = self.bge_model.encode(texts, batch_size=32, max_length=512)['dense_vecs']
+            return np.asarray(out, dtype='float32')
+        vecs = self._st_encoder().encode(texts, batch_size=32)
+        if vecs is None:
+            raise RuntimeError('dense encoder unavailable: 需 FlagEmbedding，或 '
+                               'sentence-transformers + 本地 BAAI/bge-m3')
+        return np.asarray(vecs, dtype='float32')
+
     def cleanup_and_rebuild_index(self) -> int:
         """清理重复数据并重建索引"""
         deleted = self.metadata_store.remove_duplicate_chunks()
@@ -598,12 +650,8 @@ class HybridRetriever:
     
     def _build_faiss_index(self, texts: List[str], chunk_ids: List[int]):
         """构建FAISS HNSW索引"""
-        # 生成BGE-M3 embeddings
-        embeddings = self.bge_model.encode(
-            texts,
-            batch_size=32,
-            max_length=512
-        )['dense_vecs']
+        # 生成BGE-M3 embeddings（FlagEmbedding 或 sentence-transformers 回退）
+        embeddings = self._encode_dense(texts)
         
         embeddings = np.array(embeddings).astype('float32')
         
@@ -716,7 +764,11 @@ Hypothetical Abstract:"""
         use_rerank: bool = True,
         rerank_top_k: int = 20,
         use_hyde: bool = False,
-        verbose: bool = True
+        verbose: bool = True,
+        preference_profile=None,
+        prior_lambda: Optional[float] = None,
+        memory=None,
+        user_id: Optional[str] = None,
     ) -> List[Dict]:
         """
         混合检索
@@ -737,29 +789,83 @@ Hypothetical Abstract:"""
         # 如果启用 HyDE，使用专门的 HyDE 检索方法
         if use_hyde:
             return self.search_with_hyde(query, top_k, use_rerank, verbose=verbose)
-        
-        if not self._bm25_index or not self._faiss_index:
+
+        bm25_ok = self._bm25_index is not None
+        dense_ok = self._faiss_index is not None
+        if not bm25_ok and not dense_ok:
+            logger.warning('检索不可用：BM25 与 FAISS 索引均为空（先用 add_papers() 建索引）')
+            self.last_search_meta = {'backend': 'none', 'reason': 'no-index'}
             return []
-        
+
         # 1. BM25稀疏检索
-        bm25_results = self._bm25_search(query, top_k=rerank_top_k)
-        
-        # 2. BGE-M3稠密检索
-        dense_results = self._dense_search(query, top_k=rerank_top_k)
-        
+        bm25_results = self._bm25_search(query, top_k=rerank_top_k) if bm25_ok else []
+
+        # 2. BGE-M3稠密检索（编码器不可用时降级为纯 BM25，并如实记录）
+        dense_results = []
+        if dense_ok:
+            try:
+                dense_results = self._dense_search(query, top_k=rerank_top_k)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning('稠密检索不可用，本次降级为 BM25：%s', exc)
+
         # 3. 融合结果（RRF - Reciprocal Rank Fusion）
         fused_results = self._rrf_fusion(
             bm25_results, dense_results,
             bm25_weight, dense_weight
         )
-        
-        # 4. BGE-Reranker精排
+
+        # 4. 个性化：把长期记忆中的偏好回流为**检索打分先验**
+        lam = prior_lambda
+        if lam is None:
+            lam = float(self.config.get('personalization', {}).get('lambda', 0.0))
+        personalized = False
+        profile = preference_profile
+        if profile is None and memory is not None:
+            try:
+                from ..memory.personalize import build_profile
+                profile = build_profile(memory, user_id or 'default')
+            except Exception as exc:  # noqa: BLE001
+                logger.warning('构建偏好画像失败：%s', exc)
+        if profile is not None and float(lam) > 0 and not profile.is_empty and fused_results:
+            from ..memory.personalize import preference_prior
+            enc = getattr(memory, 'encoder', None) or self._st_encoder()
+            pairs = []
+            for cand in fused_results:
+                chunk = self.metadata_store.get_chunk_by_id(cand['chunk_id'])
+                if chunk is not None:
+                    pairs.append((cand, chunk))
+            if pairs:
+                base = np.array([c['score'] for c, _ in pairs], dtype='float32')
+                boosted = preference_prior(
+                    profile, [ch.content for _, ch in pairs], enc,
+                    lam=float(lam), base_scores=base,
+                )
+                for (cand, _), score in zip(pairs, boosted):
+                    cand['score'] = float(score)
+                    cand['personalized'] = True   # 该条分数已被偏好先验重算
+                fused_results = sorted([c for c, _ in pairs], key=lambda x: -x['score'])
+                personalized = True
+                if verbose:
+                    logger.info('个性化检索生效：λ=%.2f，正向偏好 %d 条',
+                                float(lam), profile.n_positive)
+
+        # 5. BGE-Reranker精排
         if use_rerank and fused_results:
             fused_results = self._rerank(query, fused_results, top_k)
         else:
             fused_results = fused_results[:top_k]
-        
-        # 5. 补充元数据
+
+        self.last_search_meta = {
+            'backend': ('bm25+dense' if (bm25_results and dense_results)
+                        else 'bm25' if bm25_results else 'dense'),
+            'reranker_skipped': bool(self._last_rerank_skipped),
+            'personalized': personalized,
+            'prior_lambda': float(lam),
+            'n_bm25': len(bm25_results),
+            'n_dense': len(dense_results),
+        }
+
+        # 6. 补充元数据
         results = self._enrich_results(fused_results)
         
         return results
@@ -785,11 +891,8 @@ Hypothetical Abstract:"""
     
     def _dense_search(self, query: str, top_k: int) -> List[Dict]:
         """BGE-M3稠密检索"""
-        # 生成查询embedding
-        query_embedding = self.bge_model.encode(
-            [query],
-            max_length=512
-        )['dense_vecs']
+        # 生成查询embedding（FlagEmbedding 或 sentence-transformers 回退）
+        query_embedding = self._encode_dense([query])
         
         query_embedding = np.array(query_embedding).astype('float32')
         
@@ -855,10 +958,23 @@ Hypothetical Abstract:"""
         ]
     
     def _rerank(self, query: str, candidates: List[Dict], top_k: int) -> List[Dict]:
-        """BGE-Reranker精排"""
+        """BGE-Reranker精排
+
+        ⚠️ 可用性守卫看的是**reranker 权重能不能加载**，而不是"FlagEmbedding 能不能
+        import"。装了 FlagEmbedding 但本地没有 ``BAAI/bge-reranker-v2-m3`` 权重时，
+        加载会抛 OSError（离线环境无网可下），因此必须捕获并优雅跳过，
+        同时把 ``reranker_skipped`` 记进 ``last_search_meta`` —— 不静默假装精排过。
+        """
+        self._last_rerank_skipped = False
         if not candidates:
             return []
-        
+        try:
+            reranker = self.reranker
+        except Exception as exc:  # noqa: BLE001
+            self._reranker_failed = True
+            self._last_rerank_skipped = True
+            logger.warning('Reranker 权重不可用，跳过精排并保持 RRF 融合顺序：%s', exc)
+            return candidates[:top_k]
         # 获取候选文本
         pairs = []
         valid_candidates = []
@@ -870,10 +986,11 @@ Hypothetical Abstract:"""
                 valid_candidates.append(cand)
         
         if not pairs:
+            self._last_rerank_skipped = True
             return candidates[:top_k]
         
         # 计算rerank分数
-        rerank_scores = self.reranker.compute_score(pairs, normalize=True)
+        rerank_scores = reranker.compute_score(pairs, normalize=True)
         
         # 如果只有一个结果，compute_score返回float而不是list
         if isinstance(rerank_scores, float):
@@ -902,6 +1019,9 @@ Hypothetical Abstract:"""
                     'chunk_type': chunk.chunk_type,
                     'score': result.get('rerank_score', result.get('score', 0)),
                     'sources': result.get('sources', []),
+                    # 观测字段：让上层能判断这一条是否经过精排 / 是否被偏好先验影响
+                    'reranked': 'rerank_score' in result,
+                    'personalized': bool(result.get('personalized', False)),
                     'paper': {
                         'paper_id': paper.paper_id if paper else chunk.paper_id,
                         'title': paper.title if paper else '',

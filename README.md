@@ -1,6 +1,7 @@
 # 🎓 Research Assistant - 科研论文智能助手
 
-基于混合检索和多智能体的学术研究辅助系统，支持论文搜索、智能检索、实验设计和学术写作。
+基于混合检索和 **单 Agent + Skills（渐进披露）** 的学术研究辅助系统，支持论文搜索、智能检索、实验设计、学术写作，
+并通过独立记忆层做跨会话的用户个性化；LangGraph 多智能体作为可选后端保留。
 
 ## ✨ 核心功能
 
@@ -8,36 +9,37 @@
 | --------------------- | ------------------------ | --------------------------------------------------- |
 | **论文搜索**    | 从多个学术数据库获取论文 | arXiv, OpenAlex, Semantic Scholar                   |
 | **混合检索**    | 精准语义检索             | BM25 + BGE-M3 + BGE-Reranker                        |
-| **Multi-Agent** | 复杂任务自动化           | LangGraph + ReAct 策略                              |
+| **Skills**      | 按需加载的能力单元       | frontmatter 常驻 + 正文/references 渐进披露         |
+| **记忆与个性化** | 跨会话记住用户偏好       | 可配置类别 + 时间衰减 + 负反馈 + BGE-M3 语义召回 + 偏好回流检索 |
+| **Multi-Agent** | 复杂任务自动化（可选后端） | LangGraph + ReAct 策略（`backend='graph'`）         |
 | **实验设计**    | 自动生成实验方案         | LLM + 论文上下文                                    |
 | **学术写作**    | 摘要/引言/方法生成       | DeepSeek/OpenAI API                                 |
 | **LoRA微调**    | 学术写作风格优化         | Qwen2.5 + PEFT (见 `optional/finetune/`)            |
-| **记忆与个性化** | 记住用户偏好与检索历史   | SQLite + 词法召回 (`research_assistant/retrieval/memory.py`) |
 | **HTTP 服务**   | 把能力暴露为 REST 接口   | FastAPI (`api.py` / `scripts/serve.py`)             |
 
 ## 🏗️ 系统架构
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    ResearchAssistant                        │
-├─────────────────────────────────────────────────────────────┤
-│              ┌───────────────────────┐                      │
-│              │  Supervisor (Router)  │                      │
-│              │  LangGraph 状态图      │                      │
-│              └───────────┬───────────┘                      │
-│  ┌─────────────┐  ┌──────▼──────┐  ┌─────────────┐          │
-│  │  Retrieval  │  │ Experiment  │  │   Writing   │          │
-│  │    Agent    │  │    Agent    │  │    Agent    │          │
-│  └─────────────┘  └─────────────┘  └─────────────┘          │
-├─────────────────────────────────────────────────────────────┤
-│  ┌──────────────────────────┐  ┌─────────────────────────┐  │
-│  │    Hybrid Retrieval      │  │  Memory (偏好/检索历史)  │  │
-│  │ BM25 + BGE-M3 → RRF →    │  │  SQLite                  │  │
-│  │        BGE-Reranker      │  │  retrieval/memory.py     │  │
-│  └──────────────────────────┘  └─────────────────────────┘  │
-├─────────────────────────────────────────────────────────────┤
-│  数据源: arXiv | OpenAlex | Semantic Scholar                │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                     ResearchAssistant                        │
+├──────────────────────────────────────────────────────────────┤
+│  默认后端：单 Agent + Skills（渐进披露）                        │
+│    skills/paper-retrieval   skills/experiment-design         │
+│    skills/academic-writing  （frontmatter 常驻 / 正文按需加载） │
+│           ↓                                                  │
+│    SkillRegistry.select()  确定性路由，0 次 LLM 调用，单跳      │
+│                                                              │
+│  可选后端：LangGraph 多智能体（backend='graph'）                │
+│    Supervisor → Retrieval / Experiment / Writing Agent        │
+├──────────────────────────────────────────────────────────────┤
+│  混合检索：BM25 + BGE-M3 → RRF → BGE-Reranker                 │
+│             FAISS HNSW + SQLite 三层存储                      │
+├──────────────────────────────────────────────────────────────┤
+│  独立记忆层：短期(会话) + 长期(偏好可配置/衰减/负反馈 + 语义召回)  │
+│             偏好回流为检索打分先验 (λ 可调)                     │
+├──────────────────────────────────────────────────────────────┤
+│  数据源：arXiv | OpenAlex | Semantic Scholar                  │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ## 📦 安装
@@ -62,8 +64,8 @@ conda activate research_assistant
 # 安装本包 (基础依赖，不含 torch/GPU)
 pip install -e .
 
-# 需要 Multi-Agent / 微调时:
-#   pip install -e ".[agent]"      # LangGraph 多智能体
+# 可选扩展:
+#   pip install -e ".[agent]"      # LangGraph 多智能体（可选后端，默认运行时不装）
 #   pip install -e ".[finetune]"   # 混合检索(BGE/FAISS) + LoRA 微调
 #   pip install -e ".[serve]"      # FastAPI 服务
 #   pip install -e ".[dev]"        # 测试
@@ -233,12 +235,32 @@ data/
 > 除 `data/eval/` 外，`data/` 下内容均不入 git（见 `.gitignore`）。
 > PDF 与搜索缓存**分开存放**：前者是可复用资产，后者是可再生数据。
 
-### Multi-Agent (`research_assistant/agents/`)
+### Agent 运行时 (`research_assistant/agents/`)
 
-| 文件               | 功能                                       |
+| 文件               | 角色                                       |
 | ------------------ | ------------------------------------------ |
-| `multi_agent.py` | LangGraph状态图：Supervisor 路由 + 三个 Agent (检索/实验/写作) |
-| `tools.py`       | Agent工具集 (Python执行、统计分析、可视化) |
+| `single_agent.py` | **默认运行时**：一跳路由 → 按需加载 skill → 执行器分发 → 记忆落库 |
+| `multi_agent.py`  | **可选后端**：LangGraph 状态图，Supervisor + 三个 Agent（`backend='graph'`） |
+| `tools.py`        | Agent工具集 (Python执行、统计分析、可视化) |
+
+### Skills（渐进披露）
+
+| 文件 | 功能 |
+| --- | --- |
+| `research_assistant/skills/registry.py` | 扫描 `skills/*/SKILL.md` 建 frontmatter 常驻索引 + 词元重叠选择（0 次 LLM） |
+| `research_assistant/skills/loader.py` | 三级渐进披露：L0 frontmatter / L1 正文 / L2 references |
+| `skills/paper-retrieval/SKILL.md` | 论文检索 skill（+ 3 个 `references/`） |
+| `skills/experiment-design/SKILL.md` | 实验设计 skill（+ 2 个 `references/`） |
+| `skills/academic-writing/SKILL.md` | 学术写作 skill（+ 2 个 `references/`） |
+
+### 记忆层 (`research_assistant/memory/`)
+
+| 文件 | 功能 |
+| --- | --- |
+| `schema.py` | 偏好类别可配置（`PreferenceSchema`）；未知类别告警并自动登记 |
+| `encoder.py` | BGE-M3 语义编码器（懒加载；与检索共用同一份权重） |
+| `store.py` | SQLite：偏好 / 问答历史 / 成功轨迹；时间衰减 + 负反馈（`polarity`） |
+| `personalize.py` | 偏好回流为检索打分先验（`boost` / `tiebreak` 两种机制，λ 可调） |
 
 ### 实验 / 写作 / 微调
 
@@ -292,6 +314,41 @@ python scripts/eval_retrieval.py --mode bm25   # 无需 LLM API Key、无需下�
 | 检索 (BM25 基线) | Hit@5       | **100.00%** | 可复现   |
 | 检索 (BM25 基线) | MRR         | **68.75%**  | 可复现   |
 
+### 架构与个性化指标
+
+```bash
+python scripts/measure_refactor.py                              # 架构度量
+python scripts/eval_retrieval.py --mode crossdomain \
+    --corpus data/eval/corpus_crossdomain.json \
+    --eval   data/eval/retrieval_eval_crossdomain.json          # λ 消融
+```
+
+| 指标 | 改前 | 改后 |
+| --- | --- | --- |
+| 常驻上下文（4 份 agent system prompt → skill frontmatter） | 851 token | **242 token（−71.6%）** |
+| 路由 LLM 调用 | 1 次 | **0 次** |
+| 每请求路由决策 | `1 + 1 + N` | **1** |
+| 路由层代码行数 | 60 | **50** |
+| 记忆召回（中文 query） | 词重叠**恒为 0** | 语义 cos **0.41–0.91** |
+| 跨语言召回 | 失败 | 英文 query 命中中文历史，cos **0.764** |
+
+**跨域检索评测集**：360 篇 / 30 条查询 / 10 个领域（`scripts/build_crossdomain_eval.py`；
+相关性标签取自 OpenAlex `primary_topic`）。BM25 基线 **P@5 64.67%**（该集 P@5 上限 100%）。
+
+**偏好回流 λ 消融（含离域对照组）—— 结论是负面的，如实记录：**
+
+| 机制 | 结果 |
+| --- | --- |
+| `boost`（混入检索打分） | **无正向增益**；画像与查询域对齐时仍 −3.3% |
+| `tiebreak`（仅在近似并列时决定次序） | **空操作**（重排幅度小于真实分差） |
+| `expand`（拼入查询） | **灾难性**：P@5 1.67%–29.17% |
+
+> **根因**：偏好描述"用户是谁"，相关性描述"文档答不答这个查询"，两者**正交**。
+> 把先验线性混进相关性打分，等价于给相关性信号加噪声——λ 越大越差。
+> **因此本项目不把偏好用于相关性打分**：个性化只作用于
+> 画像注入 / 结果标注 / 可选查询提示。详见 `REFACTOR_NOTES.md` §5 与
+> `skills/paper-retrieval/references/scoring-and-personalization.md`。
+
 > ⚠️ **当前评测集太小，不足以支撑结论。**
 > `data/eval/retrieval_eval.json` 只有 **4 条 query**（语料 23 篇），且 q3/q4 各只标注
 > 1 篇相关文献 —— 因此 **Precision@5 的理论上限只有 60%**，
@@ -325,31 +382,39 @@ python scripts/eval_retrieval.py --mode bm25   # 无需 LLM API Key、无需下�
 ```
 research-assistant/
 ├── pyproject.toml               # 打包配置 (extras: agent/finetune/dev/serve)
+├── README.md                    # 本文档
 ├── research_assistant/          # 可安装包
 │   ├── __init__.py              # 导出 ResearchAssistant
 │   ├── assistant.py             # ResearchAssistant 门面类
 │   ├── cli.py                   # 命令行入口
+│   ├── api.py                   # FastAPI 服务层
 │   ├── config/
 │   │   ├── config.yaml          # 系统配置
 │   │   └── prompts.yaml         # Prompt模板
-│   ├── retrieval/               # 论文检索模块
-│   │   ├── paper_retriever.py   # API搜索
-│   │   ├── hybrid_retriever.py  # 混合检索
+│   ├── retrieval/               # 检索模块
+│   │   ├── paper_retriever.py   # 多源API搜索
+│   │   ├── hybrid_retriever.py  # BM25 + BGE-M3 + BGE-Reranker
 │   │   ├── pdf_markdown_processor.py # PDF解析/清洗/切分
 │   │   ├── paper_interpreter.py # 论文解读
-│   │   └── evaluation.py        # 检索评测
-│   ├── agents/                  # Multi-Agent
+│   │   └── evaluation.py        # 检索评测 (P@k/R@k/MRR) + 个性化消融
+│   ├── agents/
+│   │   ├── single_agent.py      # 默认运行时 (单 Agent + Skills)
+│   │   ├── multi_agent.py       # 可选后端 (LangGraph 多智能体)
+│   │   └── tools.py             # Agent 工具集
+│   ├── skills/                  # registry.py（frontmatter 索引）+ loader.py（三级披露）
+│   ├── memory/                  # schema / encoder / store / personalize
 │   ├── experiment/              # 实验设计
-│   ├── writing/                 # 学术写作
-│   ├── tools/                   # 工具模块
-│   │   ├── code_generator.py    # 代码生成
-│   │   ├── data_analyzer.py     # 数据分析
-│   │   └── visualizer.py        # 可视化
+│   ├── writing/                 # 学术写作 + 引用管理
+│   ├── tools/                   # 代码生成 / 数据分析 / 可视化
 │   └── utils/                   # 工具函数
+├── skills/                      # 3 个 SKILL.md（paper-retrieval / experiment-design /
+│                                #   academic-writing）+ 7 个 references/
 ├── optional/
 │   └── finetune/                # LoRA微调 (非核心)
 ├── examples/                    # 示例代码
-├── scripts/                     # 入口脚本 (arxiv_ingest / eval_retrieval / serve)
+├── scripts/                     # arxiv_ingest / eval_retrieval / serve /
+│                                #   build_crossdomain_eval / measure_refactor /
+│                                #   memory_recall_demo / demo_e2e
 ├── tests/                       # 单元测试
 ├── data/                        # 数据目录
 │   ├── papers/                  #   PDF 原件（可复用资产，勿删）
@@ -358,8 +423,7 @@ research-assistant/
 │   ├── metadata/papers.db       #   SQLite 元数据
 │   ├── eval/                    #   评测集（唯一入库 git 的文件）
 │   └── memory.db                #   用户偏好记忆
-├── pyproject.toml               # 依赖与打包 (唯一来源)
-├── README.md                    # 本文档
+├── .github/workflows/ci.yml     # CI (pytest)
 └── .env                         # 环境变量 (含 API key，已 gitignore)
 ```
 
@@ -384,7 +448,7 @@ class ResearchAssistant:
     # 摘要生成 (需要LLM API)
     def generate_abstract(title, keywords, ...) -> str
   
-    # Multi-Agent任务 (需要LLM API)
+    # Agent 任务 (默认单 Agent + Skills 后端; backend='graph' 走 LangGraph 多智能体)
     def run_agent(task, max_iterations=10) -> Dict
   
     # 完整工作流

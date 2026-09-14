@@ -1,0 +1,98 @@
+{
+  "M4_loc": {
+    "before_total": 672,
+    "before_raw": 820,
+    "after_total": 705,
+    "after_raw": 855,
+    "before_routing_loc": 60,
+    "after_routing_loc": 50,
+    "routing_reduction_pct": 16.7
+  },
+  "M1_context": {
+    "before_prompts": {
+      "SUPERVISOR_PROMPT": 224,
+      "RETRIEVAL_AGENT_PROMPT": 167,
+      "EXPERIMENT_AGENT_PROMPT": 228,
+      "WRITING_AGENT_PROMPT": 232
+    },
+    "before_prompts_chars": {
+      "SUPERVISOR_PROMPT": 394,
+      "RETRIEVAL_AGENT_PROMPT": 266,
+      "EXPERIMENT_AGENT_PROMPT": 383,
+      "WRITING_AGENT_PROMPT": 338
+    },
+    "before_total_tokens": 851,
+    "after_resident_index_chars": 292,
+    "after_resident_tokens": 242,
+    "after_skill_body_tokens": {
+      "academic-writing": 593,
+      "experiment-design": 626,
+      "paper-retrieval": 769
+    },
+    "after_worst_case_tokens": 1011,
+    "reduction_pct": 71.6
+  },
+  "M2_routing": {
+    "before": {
+      "routing_functions": 4,
+      "llm_calls_for_routing": 1,
+      "decisions_per_request": "1 (supervisor) + 1 (_route_task) + N (_check_next_agent)"
+    },
+    "after": {
+      "routing_functions": 3,
+      "llm_calls_for_routing": 0,
+      "decisions_per_request": "1 (registry.select)"
+    }
+  },
+  "skill_selection": [
+    {
+      "task": "帮我检索一下退役电池寿命预测的相关论文",
+      "selected": [
+        "paper-retrieval",
+        "academic-writing"
+      ],
+      "scores": [
+        0.333,
+        0.111
+      ]
+    },
+    {
+      "task": "search for recent papers on retrieval augmented generation",
+      "selected": [
+        "paper-retrieval"
+      ],
+      "scores": [
+        0.125
+      ]
+    },
+    {
+      "task": "帮我设计一个消融实验，对比 PINN 和纯数据驱动模型",
+      "selected": [
+        "experiment-design"
+      ],
+      "scores": [
+        0.364
+      ]
+    },
+    {
+      "task": "帮我写一段论文摘要，关于梯次利用电池分选",
+      "selected": [
+        "academic-writing",
+        "paper-retrieval"
+      ],
+      "scores": [
+        0.3,
+        0.1
+      ]
+    },
+    {
+      "task": "polish this abstract into academic English",
+      "selected": [
+        "academic-writing"
+      ],
+      "scores": [
+        0.167
+      ]
+    }
+  ]
+}

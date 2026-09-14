@@ -3,9 +3,12 @@ Research Assistant - Main Application
 科研论文智能助手主程序
 
 核心功能：
-1. 混合检索RAG：BM25 + BGE-M3 + BGE-Reranker (Precision@5: 89%)
-2. LangGraph Multi-Agent：检索/实验设计/写作 (任务完成率: 85%)
-3. Qwen2.5-7B LoRA微调：学术写作优化 (ROUGE-L: 0.47, 术语准确率: 89%)
+1. 混合检索RAG：BM25 + BGE-M3 + BGE-Reranker
+2. Skills 化能力层：paper-retrieval / experiment-design / academic-writing（渐进披露, 0 次路由 LLM 调用）
+3. 记忆与个性化：可配置偏好类别 + 时间衰减 + 负反馈 + BGE-M3 语义召回 + 偏好回流检索
+4. Qwen2.5-7B LoRA微调：学术写作优化
+
+注：所有对外声明的指标必须可由仓库内脚本复现（见 README「性能指标」小节）。
 """
 
 import logging
@@ -34,6 +37,8 @@ try:
 except ImportError:
     HAS_LANGGRAPH = False
 
+from .agents import SingleAgent   # 默认运行时：单 Agent + Skills（渐进披露）
+
 try:
     from optional.finetune import LoRATrainer, TrainingConfig, WritingEvaluator
     HAS_TRAINING = True
@@ -50,7 +55,10 @@ logger = logging.getLogger(__name__)
 class ResearchAssistant:
     """科研论文智能助手主类"""
     
-    def __init__(self, config_path: Optional[str] = None, verbose: bool = True, user_id: str = "default"):
+    def __init__(self, config_path: Optional[str] = None, verbose: bool = True,
+                 user_id: str = "default", backend: str = "single",
+                 prior_lambda: Optional[float] = None,
+                 data_dir: Optional[str] = None):
         """
         初始化研究助手
 
@@ -58,9 +66,15 @@ class ResearchAssistant:
             config_path: 配置文件路径
             verbose: 是否输出初始化信息
             user_id: 用户标识,用于个性化记忆
+            backend: 运行时后端 ``'single'``(默认, 单 Agent + Skills) 或 ``'graph'``(LangGraph)
+            prior_lambda: 偏好回流检索先验强度 λ;``None`` 时取 config 的 personalization.lambda
+            data_dir: 运行时数据目录（记忆库/索引/缓存）;默认 ``<repo>/data``。
+                传独立目录可让多次运行互不干扰（demo/测试用）
         """
         self._verbose = verbose
         self.user_id = user_id
+        self.data_dir = Path(data_dir) if data_dir else (_PROJECT_ROOT / 'data')
+        self.data_dir.mkdir(parents=True, exist_ok=True)
         self.status = {}  # 各模块加载状态,用于 health_report()
         
         # 加载配置
@@ -74,10 +88,10 @@ class ResearchAssistant:
         self.prompts = self._load_config(prompts_path)
 
         # 用户记忆(个性化:偏好 + 历史问答)
-        self.memory = MemoryStore(str(_PROJECT_ROOT / 'data' / 'memory.db'))
+        self.memory = MemoryStore(str(self.data_dir / 'memory.db'))
 
         # LLM 结果缓存(重复 query 不再重复调用 LLM)
-        set_llm_cache(str(_PROJECT_ROOT / 'data' / 'cache' / 'llm_cache.json'))
+        set_llm_cache(str(self.data_dir / 'cache' / 'llm_cache.json'))
 
         # 论文检索模块（API搜索）
         self.paper_retriever = PaperRetriever(
@@ -95,7 +109,7 @@ class ResearchAssistant:
             try:
                 self.hybrid_retriever = HybridRetriever(
                     config=hybrid_config,
-                    data_dir=str(_PROJECT_ROOT / 'data'),
+                    data_dir=str(self.data_dir),
                     verbose=verbose
                 )
                 self.status['hybrid_retriever'] = 'ok'
@@ -106,8 +120,29 @@ class ResearchAssistant:
             self.hybrid_retriever = None
             self.status['hybrid_retriever'] = 'disabled (no config)'
         
-        # Multi-Agent 模块（新）- LangGraph
-        if HAS_LANGGRAPH:
+        # 偏好回流强度 λ（个性化检索先验）
+        if prior_lambda is None:
+            prior_lambda = float(self.config.get('personalization', {}).get('lambda', 0.0))
+        self.prior_lambda = float(prior_lambda)
+
+        # 默认运行时：单 Agent + Skills（渐进披露；路由 0 次 LLM 调用）
+        self.backend = backend
+        try:
+            self.agent = SingleAgent(
+                config=self.config,
+                retriever=self.hybrid_retriever,
+                memory=self.memory,
+                user_id=self.user_id,
+                verbose=verbose,
+                prior_lambda=self.prior_lambda,
+            )
+            self.status['agent'] = 'ok (single-agent + skills)'
+        except Exception as e:
+            self.agent = None
+            self.status['agent'] = f'error: {e}'
+
+        # 可选后端：LangGraph 状态图（需要并行/长流程时选它）
+        if backend == 'graph' and HAS_LANGGRAPH:
             try:
                 agent_config = {
                     'llm': self.config.get('llm', {}),
@@ -116,13 +151,16 @@ class ResearchAssistant:
                     'citation_style': self.config.get('multi_agent', {}).get('citation_style', 'ieee')
                 }
                 self.agent_graph = ResearchAgentGraph(agent_config, self.hybrid_retriever, memory=self.memory, user_id=self.user_id)
-                self.status['agent_graph'] = 'ok'
+                self.status['agent_graph'] = 'ok (optional backend)'
             except Exception as e:
                 self.agent_graph = None
                 self.status['agent_graph'] = f'error: {e}'
         else:
             self.agent_graph = None
-            self.status['agent_graph'] = 'unavailable (langgraph not installed)'
+            self.status['agent_graph'] = (
+                'not selected (backend=%s)' % backend if backend != 'graph'
+                else 'unavailable (langgraph not installed)'
+            )
         
         # 实验设计模块
         self.experiment_planner = ExperimentPlanner(
@@ -138,6 +176,12 @@ class ResearchAssistant:
         self.citation_manager = CitationManager(
             style=self.config.get('writing_assistant', {}).get('citation_style', 'ieee')
         )
+
+        # 把实验/写作执行器注入单 Agent（skill 的执行侧；不注入则该 skill 报 unavailable）
+        if self.agent is not None:
+            self.agent.planner = self.experiment_planner
+            self.agent.writer = self.academic_writer
+            self.agent.citation_manager = self.citation_manager
         
         # 工具模块
         self.code_generator = CodeGenerator(self.config)
@@ -149,7 +193,40 @@ class ResearchAssistant:
     
     def health_report(self) -> Dict:
         """返回各模块加载状态,便于诊断(而非静默降级)。"""
-        return dict(self.status)
+        report = dict(self.status)
+        report['backend'] = self.backend
+        report['prior_lambda'] = self.prior_lambda
+        if self.agent is not None:
+            report['skills'] = [s.name for s in self.agent.registry.skills]
+            report['routing'] = 'skill-frontmatter (0 LLM calls)'
+        if self.hybrid_retriever is not None:
+            report['dense_available'] = self.hybrid_retriever.dense_available
+        return report
+
+    # ==================== 记忆与个性化 ====================
+
+    def add_preference(self, category: str, value: str, weight: float = 1.0,
+                       polarity: int = 1) -> bool:
+        """写入一条用户偏好（polarity=-1 表示负面偏好）。"""
+        ok = self.memory.add_preference(self.user_id, category, value,
+                                       weight=weight, polarity=polarity)
+        if ok:
+            self.paper_interpreter.preferences = self.memory.get_preferences(self.user_id)
+        return ok
+
+    def get_preferences(self, include_negative: bool = False) -> Dict:
+        """读取当前用户的偏好。"""
+        return self.memory.get_preferences(self.user_id, include_negative=include_negative)
+
+    def memory_report(self) -> Dict:
+        """记忆画像摘要（统计 + 画像状态），用于诊断个性化为何生效/不生效。"""
+        if self.agent is not None:
+            rep = self.agent.memory_report()
+        else:
+            rep = {'enabled': True, 'user_id': self.user_id,
+                   'stats': self.memory.stats(self.user_id)}
+        rep['prior_lambda'] = self.prior_lambda
+        return rep
 
     def _load_config(self, config_path: Path) -> Dict:
         """加载配置文件"""
@@ -274,36 +351,57 @@ class ResearchAssistant:
         top_k: int = 5,
         use_rerank: bool = True,
         use_hyde: bool = False,
-        verbose: bool = True
+        verbose: bool = True,
+        personalize: Optional[bool] = None,
+        prior_lambda: Optional[float] = None,
     ) -> List[Dict]:
         """
         混合检索：BM25 + BGE-M3 + BGE-Reranker
-        
+
         Args:
             query: 查询文本
             top_k: 返回结果数
             use_rerank: 是否使用精排
             use_hyde: 是否使用 HyDE (Hypothetical Document Embeddings)
             verbose: 是否输出详细信息
-            
+            personalize: 是否把长期记忆中的偏好回流为检索打分先验;
+                ``None`` 时按 ``prior_lambda > 0`` 自动决定
+            prior_lambda: 覆盖实例的 λ
+
         Returns:
             检索结果列表
+
+        降级信息在 ``self.hybrid_retriever.last_search_meta``
+        （``backend`` / ``reranker_skipped`` / ``personalized``）。
         """
         if self.hybrid_retriever is None:
             if verbose:
                 logger.warning("⚠️ 混合检索器未初始化")
             return []
-        
+
+        lam = self.prior_lambda if prior_lambda is None else float(prior_lambda)
+        if personalize is None:
+            personalize = lam > 0
+
         results = self.hybrid_retriever.search(
             query=query,
             top_k=top_k,
             use_rerank=use_rerank,
             use_hyde=use_hyde,
-            verbose=verbose
+            verbose=verbose,
+            memory=self.memory if personalize else None,
+            user_id=self.user_id,
+            prior_lambda=lam if personalize else 0.0,
         )
-        
+
+        if verbose:
+            meta = getattr(self.hybrid_retriever, 'last_search_meta', {})
+            logger.info("检索后端=%s 个性化=%s rerank跳过=%s",
+                        meta.get('backend'), meta.get('personalized'),
+                        meta.get('reranker_skipped'))
+
         return results
-    
+
     def index_papers(self, papers: List[Dict], process_pdf: bool = False) -> int:
         """
         将论文添加到混合检索索引
@@ -321,56 +419,71 @@ class ResearchAssistant:
         
         return self.hybrid_retriever.add_papers(papers, process_pdf)
     
-    # ==================== Multi-Agent (NEW) ====================
-    
-    def run_agent(self, task: str, max_iterations: int = 10) -> Dict:
+    # ==================== Agent 运行时（默认单 Agent + Skills） ====================
+
+    def run_agent(self, task: str, max_iterations: int = 10, chain: bool = False) -> Dict:
         """
-        运行 Multi-Agent 系统处理复杂任务
-        
+        运行 Agent 处理复杂任务
+
+        默认后端是 ``single``：单 Agent + Skills 渐进披露（路由 0 次 LLM 调用）。
+        ``backend='graph'`` 时走 LangGraph 状态图。
+
         Args:
             task: 任务描述
-            max_iterations: 最大迭代次数
-            
+            max_iterations: 最大迭代次数（graph 后端使用）
+            chain: single 后端是否把命中的多个 skill 依次串起来
+
         Returns:
-            执行结果
+            执行结果（含 routing 元信息：hops / skills / 上下文加载量）
         """
+        if self.agent is not None and self.backend == 'single':
+            logger.info("\n%s\n🤖 SINGLE-AGENT TASK\n%s\nTask: %s\n%s\n",
+                        "=" * 60, "=" * 60, task, "=" * 60)
+            result = self.agent.run(task, chain=chain)
+            routing = result.get('routing', {})
+            logger.info("✅ skills=%s hops=%s 常驻=%s字符 加载=%s字符",
+                        routing.get('skills_executed'), routing.get('hops'),
+                        routing.get('resident_index_chars'), routing.get('loaded_chars'))
+            return result
+
         if self.agent_graph is None:
-            logger.warning("⚠️ Multi-Agent system not available")
-            return {'success': False, 'error': 'Agent system not initialized'}
-        
-        logger.info(f"\n{'='*60}")
-        logger.info(f"🤖 MULTI-AGENT TASK")
-        logger.info(f"{'='*60}")
-        logger.info(f"Task: {task}")
-        logger.info(f"{'='*60}\n")
-        
+            logger.warning("⚠️ Agent 系统不可用（backend=%s）", self.backend)
+            return {'success': False, 'error': 'Agent system not initialized',
+                    'backend': self.backend}
+
+        logger.info("\n%s\n🤖 MULTI-AGENT TASK (graph backend)\n%s\nTask: %s\n%s\n",
+                    "=" * 60, "=" * 60, task, "=" * 60)
         result = self.agent_graph.run(task, max_iterations)
-        
         if result.get('success'):
-            logger.info(f"✅ Task completed successfully")
+            logger.info("✅ Task completed successfully")
         else:
-            logger.error(f"❌ Task failed: {result.get('error', 'Unknown error')}")
-        
+            logger.error("❌ Task failed: %s", result.get('error', 'Unknown error'))
         return result
-    
+
     def run_retrieval_agent(self, query: str) -> Dict:
-        """运行检索Agent"""
+        """运行检索 skill/Agent"""
+        if self.agent is not None and self.backend == 'single':
+            return self.agent.run_retrieval(query)
         if self.agent_graph is None:
             return {'success': False, 'error': 'Agent system not initialized'}
         return self.agent_graph.run_retrieval(query)
-    
+
     def run_experiment_agent(self, task: str, papers: List[Dict] = None) -> Dict:
-        """运行实验设计Agent"""
+        """运行实验设计 skill/Agent"""
+        if self.agent is not None and self.backend == 'single':
+            return self.agent.run_experiment(task, papers)
         if self.agent_graph is None:
             return {'success': False, 'error': 'Agent system not initialized'}
         return self.agent_graph.run_experiment(task, papers)
-    
+
     def run_writing_agent(self, task: str, papers: List[Dict] = None, draft: str = '') -> Dict:
-        """运行写作Agent"""
+        """运行写作 skill/Agent"""
+        if self.agent is not None and self.backend == 'single':
+            return self.agent.run_writing(task, draft=draft)
         if self.agent_graph is None:
             return {'success': False, 'error': 'Agent system not initialized'}
         return self.agent_graph.run_writing(task, papers, draft)
-    
+
     # ==================== 实验设计 ====================
     
     def design_experiment(
